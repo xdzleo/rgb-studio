@@ -190,7 +190,7 @@ public sealed class HighFlowNext : IDisposable
 
     public HighFlowNextConfig Read()
     {
-        lock (_lock) return ReadLocked();
+        lock (_lock) return ReadLocked(attempts: 15);   // it may still be busy with the last write (3 s)
     }
 
     // Right after a write the sensor answers nothing for a moment (error 31, seen on hardware).

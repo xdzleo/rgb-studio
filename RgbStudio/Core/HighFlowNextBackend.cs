@@ -46,8 +46,9 @@ public sealed class HighFlowNextBackend : IRgbBackend
 {
     public const string DeviceName = "high flow NEXT (anel)";
     public const uint DeviceType = 0x000A0000;
-    const int RingLeds = 10;
-    static readonly int[] GroupSizes = [2, 1, 1, 1, 2, 1, 1, 1];   // 8 groups, 10 LEDs
+    // 11 positions: with 0-9 one LED stayed dark on the hardware. A position past the real end is ignored.
+    const int RingLeds = 11;
+    static readonly int[] GroupSizes = [2, 1, 1, 1, 2, 1, 1, 2];   // 8 groups, 11 positions
     static readonly TimeSpan Refresh = TimeSpan.FromSeconds(1), Rebase = TimeSpan.FromSeconds(30);
 
     readonly HighFlowNextLink _link;

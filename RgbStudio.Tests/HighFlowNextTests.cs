@@ -92,12 +92,12 @@ public class HighFlowNextTests
     }
 
     [Fact]
-    public void The_ring_frame_spreads_eight_groups_over_ten_leds()
+    public void The_ring_frame_spreads_eight_groups_over_eleven_positions()
     {
         var f = HighFlowNextBackend.Layout(HighFlowNextConfig.Parse(Report()));
         Assert.All(f.All, c => Assert.Equal((1, (byte)1), (c.Strip, c.Mode)));
         Assert.Equal(new[] { 0, 2, 3, 4, 5, 7, 8, 9 }, f.All.Select(c => c.FirstLed));
-        Assert.Equal(10, f.All.Sum(c => c.Count));
+        Assert.Equal(11, f.All.Sum(c => c.Count));
         Assert.Equal(255, f.Brightness);
         Assert.True(HighFlowNextConfig.OnlyLightingDiffers(HighFlowNextConfig.Parse(Report()), f));
     }
