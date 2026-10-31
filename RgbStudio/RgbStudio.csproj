@@ -17,6 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- PawnIO's SMBus module for the RAM; it must sit next to the exe, outside the single file. -->
+    <None Include="ThirdParty\PawnIO\SmbusPIIX4.bin" Link="SmbusPIIX4.bin" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="RgbStudio.Tests" />
     <!-- The WinForms global usings clash with WPF's names; this app imports what it uses. -->
     <Using Remove="System.Windows.Forms" />

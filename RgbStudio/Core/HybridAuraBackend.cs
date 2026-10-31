@@ -15,6 +15,7 @@ public sealed class HybridAuraBackend : IRgbBackend
     readonly List<(IRgbBackend Backend, int Index)> _map = [];
     HidAuraBackend? _usb;
     AuraSdkBackend? _sdk;
+    EneSmbusBackend? _ene;
 
     /// <param name="expectedMemory">Memory sticks seen before: fewer now means the SDK came up short.</param>
     public HybridAuraBackend(int expectedMemory = 0) => _expectedMemory = expectedMemory;
@@ -62,11 +63,21 @@ public sealed class HybridAuraBackend : IRgbBackend
             _sdk?.Dispose();
             _sdk = null;
         }
+        IRgbBackend? memoryBackend = _sdk;
         if (memory.Count == 0)
         {
             _sdk?.Dispose();
             _sdk = null;
-            Name = "USB direto (sem memória)";
+            // No Aura SDK (Armoury Crate removed): the RAM straight over SMBus.
+            try
+            {
+                _ene = new EneSmbusBackend();
+                memory = _ene.Open();
+            }
+            catch (Exception ex) { Log.Write($"Memória pelo SMBus indisponível: {ex.Message}"); memory = []; }
+            if (memory.Count == 0) { _ene?.Dispose(); _ene = null; }
+            memoryBackend = _ene;
+            Name = _ene is null ? "USB direto (sem memória)" : "USB + RAM direto";
         }
 
         _usb = new HidAuraBackend(manageService: _sdk is null);
@@ -76,10 +87,10 @@ public sealed class HybridAuraBackend : IRgbBackend
             _map.Add((_usb, d.Index));
             devices.Add(d with { Index = devices.Count });
         }
-        if (_sdk is not null)
+        if (memoryBackend is not null)
             foreach (var d in memory)
             {
-                _map.Add((_sdk, d.Index));
+                _map.Add((memoryBackend, d.Index));
                 devices.Add(d with { Index = devices.Count });
             }
         return devices;
@@ -95,11 +106,13 @@ public sealed class HybridAuraBackend : IRgbBackend
     {
         _usb?.Release();
         _sdk?.Release();
+        _ene?.Release();
     }
 
     public void Dispose()
     {
         _usb?.Dispose();
         _sdk?.Dispose();
+        _ene?.Dispose();
     }
 }

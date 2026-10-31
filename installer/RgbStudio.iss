@@ -47,12 +47,19 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#SourceDir}\RgbStudio.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+; The RAM without ASUS software: PawnIO's SMBus module next to the exe, and the PawnIO driver
+; installer, run only when the driver is missing (see ThirdParty\PawnIO\README.txt).
+Source: "{#SourceDir}\SmbusPIIX4.bin"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\RgbStudio\ThirdParty\PawnIO\README.txt"; DestDir: "{app}\ThirdParty\PawnIO"; Flags: ignoreversion
+Source: "..\RgbStudio\ThirdParty\PawnIO\COPYING-modules.txt"; DestDir: "{app}\ThirdParty\PawnIO"; Flags: ignoreversion
+Source: "..\publish\thirdparty\PawnIO_setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{autoprograms}\RGB Studio"; Filename: "{app}\RgbStudio.exe"; Comment: "Efeitos de luz para ASUS Aura"
 Name: "{autodesktop}\RGB Studio"; Filename: "{app}\RgbStudio.exe"; Comment: "Efeitos de luz para ASUS Aura"; Tasks: desktopicon
 
 [Run]
+Filename: "{tmp}\PawnIO_setup.exe"; Parameters: "-install -silent"; StatusMsg: "Instalando o driver PawnIO (memórias RGB)..."; Flags: waituntilterminated runhidden; Check: not PawnIOInstalled
 Filename: "{app}\RgbStudio.exe"; Description: "{cm:LaunchProgram,RGB Studio}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
@@ -62,6 +69,13 @@ Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /TN ""RGB Studio"" /F"; Fla
 ; Settings and the log stay in %APPDATA%\RgbStudio after uninstalling, so a reinstall keeps your effects.
 
 [Code]
+// The driver is a kernel service; its key exists once it is installed. Uninstalling the app
+// leaves it, since other software (sensor monitors) may use it too.
+function PawnIOInstalled(): Boolean;
+begin
+  Result := RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\PawnIO');
+end;
+
 function IsAppRunning(): Boolean;
 var
   Wmi, Procs: Variant;
