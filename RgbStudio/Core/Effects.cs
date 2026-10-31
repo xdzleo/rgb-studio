@@ -14,6 +14,8 @@ public sealed class EffectParams
     public IReadOnlyList<Rgb> Colors { get; set; } = [];
     /// <summary>Sequência: moving bands instead of fading the whole strip.</summary>
     public bool Bands { get; set; }
+    /// <summary>Minhas cores: how the colors move (see <see cref="MyColorsEffect.Motions"/>).</summary>
+    public string Motion { get; set; } = "";
 }
 
 /// <summary>
@@ -41,6 +43,8 @@ public abstract class Effect
     public virtual bool UsesDirection => false;
     /// <summary>Whether speed means anything for it.</summary>
     public virtual bool UsesSpeed => true;
+    /// <summary>Offers a choice of how the colors move.</summary>
+    public virtual bool UsesMotion => false;
 
     public abstract void Render(Span<Rgb> leds, double t, EffectParams p, int seed);
 
@@ -262,7 +266,7 @@ public static class EffectCatalog
     [
         new StaticEffect(), new BreathingEffect(), new ColorCycleEffect(), new RainbowEffect(),
         new WaveEffect(), new CometEffect(), new StarryNightEffect(), new StrobeEffect(),
-        new GradientEffect(), new SequenceEffect(), new OffEffect(),
+        new GradientEffect(), new SequenceEffect(), new MyColorsEffect(), new OffEffect(),
         new AuroraEffect(), new FireEffect(), new PlasmaEffect(), new OceanEffect(), new LavaEffect(),
         new CollisionEffect(), new MeteorsEffect(), new HeartbeatEffect(), new StormEffect(), new DigitalRainEffect(),
         new BouncingEffect(), new ScannerEffect(), new GalaxyEffect(), new PendulumEffect(), new FirefliesEffect(),

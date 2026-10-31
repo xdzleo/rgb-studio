@@ -302,6 +302,7 @@ public partial class MainWindow : Window
                 b.Click += (_, _) => click();
                 return b;
             }
+            Gallery.Children.Add(Make("≋", "Novo efeito com minhas cores", CreateMyColors));
             Gallery.Children.Add(Make("●", "Nova cor estática", CreateStaticColor));
             Gallery.Children.Add(Make("+", "Criar a partir do atual", CreateEffect));
         }
@@ -372,6 +373,16 @@ public partial class MainWindow : Window
         AddMine(preset);
     }
 
+    /// <summary>Pick colors, pick how they move: starts with three, running.</summary>
+    void CreateMyColors()
+    {
+        var preset = Presets.NewFrom(_settings.Builtin(MyColorsEffect.EffectId), $"Minhas cores {_settings.MyEffects.Count(p => p.Effect == MyColorsEffect.EffectId) + 1}");
+        preset.Colors = ["#FF0028", "#FFFFFF", "#0078FF"];
+        preset.Motion = "run";
+        preset.Brightness = 100;
+        AddMine(preset);
+    }
+
     void AddMine(EffectPreset preset)
     {
         _settings.MyEffects.Add(preset);
@@ -437,10 +448,22 @@ public partial class MainWindow : Window
         }
 
         // Motion.
+        if (effect.UsesMotion)
+        {
+            Inspector.Children.Add(new TextBlock { Text = "Como as cores andam", FontSize = 13, Margin = new Thickness(0, 0, 0, 6) });
+            var motions = new WrapPanel { Margin = new Thickness(0, 0, 0, 12) };
+            foreach (var (id, name) in MyColorsEffect.Motions)
+            {
+                var chip = new RadioButton { Style = (Style)FindResource("Tab"), Content = name, GroupName = "motion", IsChecked = preset.Motion == id || (preset.Motion is "" && id == "run"), Margin = new Thickness(0, 0, 4, 4) };
+                chip.Checked += (_, _) => { preset.Motion = id; Commit(); };
+                motions.Children.Add(chip);
+            }
+            Inspector.Children.Add(motions);
+        }
         if (effect.UsesSpeed) AddSlider("Velocidade", 0.1, 5, preset.Speed, v => $"{v:0.0}×", v => { preset.Speed = Math.Round(v, 2); Commit(); });
         AddSlider("Brilho", 0, 100, preset.Brightness, v => $"{v:0}%", v => { preset.Brightness = (int)v; Commit(); });
         if (effect.UsesDirection) AddSwitch("Inverter direção", preset.Reverse, v => { preset.Reverse = v; Commit(); });
-        if (effect.UsesColors) AddSwitch("Faixas andando pela fita", preset.Bands, v => { preset.Bands = v; Commit(); });
+        if (effect.UsesColors && !effect.UsesMotion) AddSwitch("Faixas andando pela fita", preset.Bands, v => { preset.Bands = v; Commit(); });
 
         // Keep it, undo it.
         Spacer(8);

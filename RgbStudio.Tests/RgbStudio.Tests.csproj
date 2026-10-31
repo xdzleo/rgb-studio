@@ -32,6 +32,7 @@
     <Compile Include="..\RgbStudio\Core\HighFlowNext.cs" Link="Core\HighFlowNext.cs" />
     <Compile Include="..\RgbStudio\Core\HighFlowNextBackend.cs" Link="Core\HighFlowNextBackend.cs" />
     <Compile Include="..\RgbStudio\Core\EneSmbusBackend.cs" Link="Core\EneSmbusBackend.cs" />
+    <Compile Include="..\RgbStudio\Core\MyColorsEffect.cs" Link="Core\MyColorsEffect.cs" />
   </ItemGroup>
 
 </Project>

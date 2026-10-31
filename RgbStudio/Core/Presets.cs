@@ -22,6 +22,8 @@ public sealed class EffectPreset
     public double Speed { get; set; } = 1;
     public int Brightness { get; set; } = 100;
     public bool Reverse { get; set; }
+    /// <summary>Minhas cores: how the colors move.</summary>
+    public string Motion { get; set; } = "run";
 
     [JsonIgnore] public bool IsBuiltin => Id.StartsWith(Presets.BuiltinPrefix, StringComparison.Ordinal);
 
@@ -34,12 +36,13 @@ public sealed class EffectPreset
         Speed = Math.Clamp(Speed, 0.1, 5),
         Brightness = Math.Clamp(Brightness, 0, 100),
         Reverse = Reverse,
+        Motion = Motion,
     };
 
     public EffectPreset Clone() => new()
     {
         Id = Id, Name = Name, Effect = Effect, Color1 = Color1, Color2 = Color2,
-        Colors = [.. Colors], Bands = Bands, Speed = Speed, Brightness = Brightness, Reverse = Reverse,
+        Colors = [.. Colors], Bands = Bands, Speed = Speed, Brightness = Brightness, Reverse = Reverse, Motion = Motion,
     };
 }
 
