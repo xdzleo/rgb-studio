@@ -130,6 +130,7 @@ public partial class MainWindow : Window
         _zoneStrips.Clear();
         ZoneList.Children.Add(ZoneRow(AllZones, "Todas as zonas", null));
         foreach (var d in _engine.Devices) ZoneList.Children.Add(ZoneRow(d.Name, ZoneName(d), d));
+        AddFlowZones();
     }
 
     FrameworkElement ZoneRow(string key, string title, DeviceInfo? device)
@@ -174,7 +175,10 @@ public partial class MainWindow : Window
                 Changed();
                 if (_tab == "Count") BuildGallery();
             }
+            bool wasFlow = FlowZone;
             _zone = key;
+            if (IsFlowZone(key)) { EnterFlowZone(); return; }
+            if (wasFlow) { Tabs.Visibility = Visibility.Visible; BuildGallery(); }
             _selected = device is null ? _settings.ActivePreset : _settings.For(device.Name).Preset ?? _settings.ActivePreset;
             ShowSelectedInGallery();
             BuildInspector();
@@ -189,6 +193,7 @@ public partial class MainWindow : Window
     string EffectNameOf(string key)
     {
         if (key == AllZones) return _settings.Resolve(null).Name;
+        if (IsFlowZone(key)) return FlowEffectName(key);
         var own = _settings.For(key).Preset;
         return own is null ? $"{_settings.Resolve(null).Name} (igual às outras)" : _settings.Resolve(own).Name;
     }
@@ -196,8 +201,16 @@ public partial class MainWindow : Window
     void UpdateStageTitle()
     {
         var device = ZoneDevice;
-        StageZone.Text = (device is null ? "Todas as zonas" : ZoneName(device)).ToUpperInvariant();
-        StageEffect.Text = _settings.Resolve(device is null ? null : _settings.For(device.Name).Preset).Name;
+        if (FlowZone)
+        {
+            StageZone.Text = (_zone == FlowRing ? "Sensor de fluxo · anel" : "Sensor de fluxo · RGBpx").ToUpperInvariant();
+            StageEffect.Text = FlowEffectName(_zone);
+        }
+        else
+        {
+            StageZone.Text = (device is null ? "Todas as zonas" : ZoneName(device)).ToUpperInvariant();
+            StageEffect.Text = _settings.Resolve(device is null ? null : _settings.For(device.Name).Preset).Name;
+        }
         foreach (var (key, zone) in _zoneStrips) zone.Effect.Text = EffectNameOf(key);
     }
 
@@ -213,13 +226,12 @@ public partial class MainWindow : Window
         "Sinais" => TabSignals,
         "Mine" => TabMine,
         "Count" => TabCount,
-        "Flow" => TabFlow,
         _ => TabClassic,
     };
 
     void OnTab(object sender, RoutedEventArgs e)
     {
-        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : sender == TabFlow ? "Flow" : "Clássicos";
+        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : "Clássicos";
         // Counting lights take over a zone; leaving the tab gives it back.
         if (_tab != "Count" && _settings.LocatorZone is not null) { _settings.LocatorZone = null; Changed(); }
         if (!_loading)
@@ -231,7 +243,7 @@ public partial class MainWindow : Window
 
     void ShowSelectedInGallery()
     {
-        if (_tab is "Count" or "Flow") return;
+        if (_tab == "Count" || FlowZone) return;
         var p = _settings.Resolve(_selected);
         var tab = p.IsBuiltin ? EffectCatalog.Get(p.Effect).Category : "Mine";
         if (tab != _tab) TabFor(tab).IsChecked = true;
@@ -244,7 +256,7 @@ public partial class MainWindow : Window
         double room = Gallery.ActualWidth;
         if (room <= 0) return;
         const double Wanted = 176, Gap = 12;
-        double width = _tab is "Count" or "Flow"
+        double width = _tab == "Count" && !FlowZone
             ? room - Gap      // one zone per row
             : Math.Floor(room / Math.Max(1, Math.Floor(room / (Wanted + Gap)))) - Gap;
         foreach (FrameworkElement card in Gallery.Children) card.Width = width;
@@ -255,9 +267,9 @@ public partial class MainWindow : Window
         Gallery.Children.Clear();
         _thumbs.Clear();
         _cards.Clear();
-        if (_tab == "Flow")
+        if (FlowZone)
         {
-            BuildFlowTab();
+            BuildFlowGallery();
             FitGallery();
             return;
         }
@@ -374,6 +386,7 @@ public partial class MainWindow : Window
         Inspector.Children.Clear();
         _nameBox = null;
         _resetButton = null;
+        if (FlowZone) { BuildFlowInspector(); return; }
         var preset = _settings.Resolve(_selected).Clone();
         var effect = EffectCatalog.Get(preset.Effect);
 
@@ -728,7 +741,9 @@ public partial class MainWindow : Window
             if (zone is null ? ds.Enabled : d.Name == zone.Name)
                 for (int k = 0; k < length; k++) all.Add(colors[k]);
         }
-        var stageColors = all.ToArray();
+        // The sensor draws its own effect; the stage shows its colors.
+        var stageColors = FlowZone ? FlowPreview(_zone) : all.ToArray();
+        if (FlowZone) undo = 1;
         Blit(_stage, stageColors, stageColors.Length, undo);
         if (_zoneStrips.TryGetValue(AllZones, out var allRow)) Blit(allRow.Bitmap, everyZone.ToArray(), everyZone.Count, undo);
         SetAmbient(stageColors, undo);

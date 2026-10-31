@@ -114,7 +114,7 @@
 
         <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="16" Padding="14,12,6,10">
           <DockPanel>
-            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <WrapPanel x:Name="Tabs" DockPanel.Dock="Top" Margin="0,0,0,10">
               <RadioButton x:Name="TabGradients" GroupName="tabs" Style="{StaticResource Tab}" Content="Gradientes" Checked="OnTab"/>
               <RadioButton x:Name="TabRaw" GroupName="tabs" Style="{StaticResource Tab}" Content="RGB puro" Checked="OnTab"/>
               <RadioButton x:Name="TabPride" GroupName="tabs" Style="{StaticResource Tab}" Content="Orgulho" Checked="OnTab"/>
@@ -123,9 +123,7 @@
               <RadioButton x:Name="TabSignals" GroupName="tabs" Style="{StaticResource Tab}" Content="Sinais" Checked="OnTab"/>
               <RadioButton x:Name="TabClassic" GroupName="tabs" Style="{StaticResource Tab}" Content="Clássicos" Checked="OnTab"/>
               <RadioButton x:Name="TabMine" GroupName="tabs" Style="{StaticResource Tab}" Content="Meus efeitos" Checked="OnTab"/>
-              <RadioButton x:Name="TabCount" GroupName="tabs" Style="{StaticResource Tab}" Content="Contar LEDs" Checked="OnTab"/>
-              <RadioButton x:Name="TabFlow" GroupName="tabs" Style="{StaticResource Tab}" Content="high flow NEXT" Checked="OnTab"/>
-            </WrapPanel>
+              <RadioButton x:Name="TabCount" GroupName="tabs" Style="{StaticResource Tab}" Content="Contar LEDs" Checked="OnTab"/>            </WrapPanel>
             <ScrollViewer x:Name="GalleryScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
               <WrapPanel x:Name="Gallery" Margin="4,4,0,0"/>
             </ScrollViewer>
