@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -30,6 +30,7 @@
     <Compile Include="..\RgbStudio\Core\SimulationEffects.cs" Link="Core\SimulationEffects.cs" />
     <Compile Include="..\RgbStudio\Core\GradientEffects.cs" Link="Core\GradientEffects.cs" />
     <Compile Include="..\RgbStudio\Core\HighFlowNext.cs" Link="Core\HighFlowNext.cs" />
+    <Compile Include="..\RgbStudio\Core\HighFlowNextBackend.cs" Link="Core\HighFlowNextBackend.cs" />
   </ItemGroup>
 
 </Project>

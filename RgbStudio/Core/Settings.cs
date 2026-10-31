@@ -20,11 +20,13 @@ public sealed class DeviceSettings
     public int RedGain { get; set; } = 100;
     public int GreenGain { get; set; } = 100;
     public int BlueGain { get; set; } = 100;
+    /// <summary>A device with effects of its own (the high flow NEXT) runs those instead of this app's.</summary>
+    public bool SensorEffect { get; set; }
 
     public DeviceSettings Clone() => new()
     {
         Enabled = Enabled, LedCount = LedCount, Preset = Preset, Alias = Alias,
-        RedGain = RedGain, GreenGain = GreenGain, BlueGain = BlueGain,
+        RedGain = RedGain, GreenGain = GreenGain, BlueGain = BlueGain, SensorEffect = SensorEffect,
     };
 }
 
@@ -105,11 +107,12 @@ public sealed class AppSettings
         if (device is null)
         {
             ActivePreset = presetId;
-            foreach (var d in Devices.Values) d.Preset = null;
+            foreach (var d in Devices.Values) { d.Preset = null; d.SensorEffect = false; }
         }
         else
         {
             For(device).Preset = presetId == ActivePreset ? null : presetId;
+            For(device).SensorEffect = false;
         }
     }
 

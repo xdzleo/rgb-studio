@@ -123,7 +123,9 @@
               <RadioButton x:Name="TabSignals" GroupName="tabs" Style="{StaticResource Tab}" Content="Sinais" Checked="OnTab"/>
               <RadioButton x:Name="TabClassic" GroupName="tabs" Style="{StaticResource Tab}" Content="Clássicos" Checked="OnTab"/>
               <RadioButton x:Name="TabMine" GroupName="tabs" Style="{StaticResource Tab}" Content="Meus efeitos" Checked="OnTab"/>
-              <RadioButton x:Name="TabCount" GroupName="tabs" Style="{StaticResource Tab}" Content="Contar LEDs" Checked="OnTab"/>            </WrapPanel>
+              <RadioButton x:Name="TabCount" GroupName="tabs" Style="{StaticResource Tab}" Content="Contar LEDs" Checked="OnTab"/>
+              <RadioButton x:Name="TabSensor" GroupName="tabs" Style="{StaticResource Tab}" Content="Do sensor" Checked="OnTab" Visibility="Collapsed"
+                           ToolTip="Os efeitos que o próprio sensor roda, mesmo com este app fechado"/>            </WrapPanel>
             <ScrollViewer x:Name="GalleryScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
               <WrapPanel x:Name="Gallery" Margin="4,4,0,0"/>
             </ScrollViewer>

@@ -130,7 +130,7 @@ public partial class MainWindow : Window
         _zoneStrips.Clear();
         ZoneList.Children.Add(ZoneRow(AllZones, "Todas as zonas", null));
         foreach (var d in _engine.Devices) ZoneList.Children.Add(ZoneRow(d.Name, ZoneName(d), d));
-        AddFlowZones();
+        UpdateSensorTab();
     }
 
     FrameworkElement ZoneRow(string key, string title, DeviceInfo? device)
@@ -175,10 +175,8 @@ public partial class MainWindow : Window
                 Changed();
                 if (_tab == "Count") BuildGallery();
             }
-            bool wasFlow = FlowZone;
             _zone = key;
-            if (IsFlowZone(key)) { EnterFlowZone(); return; }
-            if (wasFlow) { Tabs.Visibility = Visibility.Visible; BuildGallery(); }
+            UpdateSensorTab();
             _selected = device is null ? _settings.ActivePreset : _settings.For(device.Name).Preset ?? _settings.ActivePreset;
             ShowSelectedInGallery();
             BuildInspector();
@@ -193,7 +191,7 @@ public partial class MainWindow : Window
     string EffectNameOf(string key)
     {
         if (key == AllZones) return _settings.Resolve(null).Name;
-        if (IsFlowZone(key)) return FlowEffectName(key);
+        if (key == HighFlowNextBackend.DeviceName && SensorOn) return $"{SensorEffectName()} (do sensor)";
         var own = _settings.For(key).Preset;
         return own is null ? $"{_settings.Resolve(null).Name} (igual às outras)" : _settings.Resolve(own).Name;
     }
@@ -201,16 +199,9 @@ public partial class MainWindow : Window
     void UpdateStageTitle()
     {
         var device = ZoneDevice;
-        if (FlowZone)
-        {
-            StageZone.Text = (_zone == FlowRing ? "Sensor de fluxo · anel" : "Sensor de fluxo · RGBpx").ToUpperInvariant();
-            StageEffect.Text = FlowEffectName(_zone);
-        }
-        else
-        {
-            StageZone.Text = (device is null ? "Todas as zonas" : ZoneName(device)).ToUpperInvariant();
-            StageEffect.Text = _settings.Resolve(device is null ? null : _settings.For(device.Name).Preset).Name;
-        }
+        StageZone.Text = (device is null ? "Todas as zonas" : ZoneName(device)).ToUpperInvariant();
+        StageEffect.Text = RingZone && SensorOn ? SensorEffectName()
+            : _settings.Resolve(device is null ? null : _settings.For(device.Name).Preset).Name;
         foreach (var (key, zone) in _zoneStrips) zone.Effect.Text = EffectNameOf(key);
     }
 
@@ -226,12 +217,13 @@ public partial class MainWindow : Window
         "Sinais" => TabSignals,
         "Mine" => TabMine,
         "Count" => TabCount,
+        "Sensor" => TabSensor,
         _ => TabClassic,
     };
 
     void OnTab(object sender, RoutedEventArgs e)
     {
-        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : "Clássicos";
+        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : sender == TabSensor ? "Sensor" : "Clássicos";
         // Counting lights take over a zone; leaving the tab gives it back.
         if (_tab != "Count" && _settings.LocatorZone is not null) { _settings.LocatorZone = null; Changed(); }
         if (!_loading)
@@ -243,7 +235,8 @@ public partial class MainWindow : Window
 
     void ShowSelectedInGallery()
     {
-        if (_tab == "Count" || FlowZone) return;
+        if (_tab == "Count") return;
+        if (RingZone && SensorOn) { TabSensor.IsChecked = true; return; }
         var p = _settings.Resolve(_selected);
         var tab = p.IsBuiltin ? EffectCatalog.Get(p.Effect).Category : "Mine";
         if (tab != _tab) TabFor(tab).IsChecked = true;
@@ -256,7 +249,7 @@ public partial class MainWindow : Window
         double room = Gallery.ActualWidth;
         if (room <= 0) return;
         const double Wanted = 176, Gap = 12;
-        double width = _tab == "Count" && !FlowZone
+        double width = _tab == "Count"
             ? room - Gap      // one zone per row
             : Math.Floor(room / Math.Max(1, Math.Floor(room / (Wanted + Gap)))) - Gap;
         foreach (FrameworkElement card in Gallery.Children) card.Width = width;
@@ -267,7 +260,7 @@ public partial class MainWindow : Window
         Gallery.Children.Clear();
         _thumbs.Clear();
         _cards.Clear();
-        if (FlowZone)
+        if (_tab == "Sensor")
         {
             BuildFlowGallery();
             FitGallery();
@@ -386,7 +379,7 @@ public partial class MainWindow : Window
         Inspector.Children.Clear();
         _nameBox = null;
         _resetButton = null;
-        if (FlowZone) { BuildFlowInspector(); return; }
+        if (_tab == "Sensor" && RingZone) { BuildFlowInspector(); return; }
         var preset = _settings.Resolve(_selected).Clone();
         var effect = EffectCatalog.Get(preset.Effect);
 
@@ -742,8 +735,11 @@ public partial class MainWindow : Window
                 for (int k = 0; k < length; k++) all.Add(colors[k]);
         }
         // The sensor draws its own effect; the stage shows its colors.
-        var stageColors = FlowZone ? FlowPreview(_zone) : all.ToArray();
-        if (FlowZone) undo = 1;
+        // A sensor on its own effect: the app's frame is not what it shows, so its colors are.
+        bool own = RingZone && SensorOn;
+        var stageColors = own ? SensorPreview() : all.ToArray();
+        if (own) undo = 1;
+        if (SensorOn && _zoneStrips.TryGetValue(HighFlowNextBackend.DeviceName, out var ringRow)) { var p = SensorPreview(); Blit(ringRow.Bitmap, p, p.Length, 1); }
         Blit(_stage, stageColors, stageColors.Length, undo);
         if (_zoneStrips.TryGetValue(AllZones, out var allRow)) Blit(allRow.Bitmap, everyZone.ToArray(), everyZone.Count, undo);
         SetAmbient(stageColors, undo);
@@ -958,6 +954,7 @@ public partial class MainWindow : Window
         _settings.Chain = ChainBox.IsChecked == true;
         _settings.Gamma = GammaBox.IsChecked == true;
         _settings.StartMinimized = StartMinBox.IsChecked == true;
+        if (Sensor is not null) Sensor.UseNative = SensorOn;
         _engine.Settings = _settings.Clone();   // the engine draws from its own copy
         _saveSoon.Stop();
         _saveSoon.Start();

@@ -7,113 +7,74 @@ using RgbStudio.Core;
 namespace RgbStudio;
 
 /// <summary>
-/// The high flow NEXT as zones. The sensor runs its own effects, so its zones list the
-/// sensor's effects instead of this app's, and a change edits the sensor's settings instead
-/// of streaming frames. It applies at once and lasts until the sensor loses power;
-/// "Salvar no aparelho" keeps it.
+/// The high flow NEXT's ring is a zone like any other and takes every effect of this app.
+/// It also has effects of its own, which run even with this app closed: those are in the
+/// "Do sensor" tab, and picking one hands the ring back to the sensor.
 /// </summary>
 public partial class MainWindow
 {
-    const string FlowRing = "flow:ring", FlowPx = "flow:px";
+    /// <summary>The sensor shared with the engine; null in a simulation.</summary>
+    public HighFlowNextLink? Sensor { get; set; }
 
-    HighFlowNext? _flow;
-    HighFlowNextConfig? _flowEdit;
     string _flowStatus = "";
     TextBlock? _flowStatusText;
-    bool _flowWriting, _flowAgain, _flowTried;
-    readonly DispatcherTimer _flowSoon = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    bool _flowWriting, _flowAgain;
+    DispatcherTimer? _flowSoon;
 
-    static bool IsFlowZone(string key) => key.StartsWith("flow:", StringComparison.Ordinal);
-    bool FlowZone => IsFlowZone(_zone);
+    bool RingZone => _zone == HighFlowNextBackend.DeviceName;
 
-    /// <summary>The ring is the sensor's own LEDs (strip 1); RGBpx is its output, edited as one.</summary>
-    IEnumerable<HighFlowNextConfig.Controller> FlowControllers(string key) =>
-        _flowEdit?.All.Where(c => c.Count > 0 && c.Strip == (key == FlowRing ? 1 : 0)) ?? [];
+    /// <summary>The ring is running the sensor's own effect, not this app's.</summary>
+    bool SensorOn => _settings.Devices.TryGetValue(HighFlowNextBackend.DeviceName, out var d) && d.SensorEffect;
 
-    HighFlowNextConfig.Controller? FlowMain(string key) => FlowControllers(key).FirstOrDefault();
+    /// <summary>The ring's groups in the sensor's own lighting.</summary>
+    IEnumerable<HighFlowNextConfig.Controller> RingControllers() =>
+        Sensor?.Native?.All.Where(c => c.Count > 0 && c.Strip == 1) ?? [];
 
-    /// <summary>Reads the sensor once, when the zones are first built; a missing one adds nothing.</summary>
-    void AddFlowZones()
+    HighFlowNextConfig.Controller? RingMain() => RingControllers().FirstOrDefault();
+
+    void UpdateSensorTab()
     {
-        if (!_canSave) return;   // a simulation never touches hardware
-        if (_flowEdit is null && !_flowTried)
-        {
-            _flowTried = true;
-            try
-            {
-                _flow = HighFlowNext.Open();
-                if (_flow is not null)
-                {
-                    _flowEdit = _flow.Read();
-                    _flowStatus = "Lido do sensor.";
-                    Log.Write("high flow NEXT encontrado.");
-                }
-            }
-            catch (Exception ex) { Log.Write($"high flow NEXT: {ex.Message}"); }
-            _flowSoon.Tick += (_, _) => { _flowSoon.Stop(); SendFlow(save: false); };
-        }
-        if (_flowEdit is null) return;
-        if (FlowMain(FlowRing) is { } ring) ZoneList.Children.Add(ZoneRow(FlowRing, "Sensor de fluxo · anel", null));
-        if (FlowMain(FlowPx) is not null) ZoneList.Children.Add(ZoneRow(FlowPx, "Sensor de fluxo · RGBpx", null));
-        PaintFlowRows();
+        bool show = RingZone && RingMain() is not null;
+        TabSensor.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show && _tab == "Sensor") TabMotion.IsChecked = true;
     }
 
     static string FlowModeName(byte mode) =>
         HighFlowNextConfig.Modes.FirstOrDefault(m => m.Mode == mode) is { Name: { } n } ? n : $"Modo {mode}";
 
-    string FlowEffectName(string key) => FlowMain(key) is { } c ? FlowModeName(c.Mode) : "";
+    string SensorEffectName() => RingMain() is { } c ? FlowModeName(c.Mode) : "";
 
-    /// <summary>The device draws the effect, so the strips here show its colors: background with the first color in it.</summary>
-    Rgb[] FlowPreview(string key)
+    /// <summary>The sensor draws its own effect; the screen shows its colors.</summary>
+    Rgb[] SensorPreview()
     {
-        if (FlowMain(key) is not { } c) return [Rgb.Black];
+        if (RingMain() is not { } c) return [Rgb.Black];
         var bg = c.Color(0); var fg = c.Color(1);
         return c.Mode is 3 or 19 ? Enumerable.Range(0, 24).Select(i => Rgb.FromHsv(i * 15, 1, 1)).ToArray()
             : [bg, bg, fg, fg, bg, bg, bg, bg, fg, fg, bg, bg];
     }
 
-    void PaintFlowRows()
-    {
-        foreach (var key in new[] { FlowRing, FlowPx })
-            if (_zoneStrips.TryGetValue(key, out var row))
-            {
-                var p = FlowPreview(key);
-                Blit(row.Bitmap, p, p.Length, 1);
-                row.Effect.Text = FlowEffectName(key);
-            }
-    }
-
-    void EnterFlowZone()
-    {
-        Tabs.Visibility = Visibility.Collapsed;
-        if (_settings.LocatorZone is not null) { _settings.LocatorZone = null; Changed(); }
-        BuildGallery();
-        GalleryScroll.ScrollToTop();
-        BuildInspector();
-        UpdateStageTitle();
-    }
-
     void BuildFlowGallery()
     {
-        if (FlowMain(_zone) is not { } main) return;
+        if (RingMain() is not { } main) return;
         Gallery.Children.Add(new TextBlock
         {
-            Text = "Efeitos do próprio sensor: ele os roda sozinho, mesmo com este app fechado.",
+            Text = "Efeitos do próprio sensor: ele os roda sozinho, mesmo com este app fechado. Para o anel voltar a seguir o app, escolha um efeito em qualquer outra aba.",
             Foreground = Res("Dim"), FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 0, 0, 12),
         });
         foreach (var (mode, name) in HighFlowNextConfig.Modes)
         {
             var card = new RadioButton
             {
-                Style = (Style)FindResource("Surface"), GroupName = "flowmodes", IsChecked = main.Mode == mode,
+                Style = (Style)FindResource("Surface"), GroupName = "flowmodes", IsChecked = SensorOn && main.Mode == mode,
                 Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(14, 12, 14, 12),
                 Content = new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeights.SemiBold },
             };
             card.Checked += (_, _) =>
             {
-                foreach (var c in FlowControllers(_zone)) c.Mode = mode;
-                FlowChanged();
-                PaintFlowRows();
+                foreach (var c in RingControllers()) c.Mode = mode;
+                _settings.For(HighFlowNextBackend.DeviceName).SensorEffect = true;
+                Changed();
+                SendFlow(save: false);
                 UpdateStageTitle();
                 BuildInspector(animate: false);
             };
@@ -123,11 +84,14 @@ public partial class MainWindow
 
     void BuildFlowInspector()
     {
-        if (FlowMain(_zone) is not { } main || _flowEdit is not { } cfg) return;
-        Inspector.Children.Add(new TextBlock { Text = FlowModeName(main.Mode), FontFamily = (FontFamily)FindResource("Display"), FontSize = 24, FontWeight = FontWeights.SemiBold });
-        int leds = FlowControllers(_zone).Sum(c => c.Count);
-        string where = _zone == FlowRing ? $"Anel do sensor, {leds} LEDs" : $"Saída RGBpx, {leds} LEDs em {FlowControllers(_zone).Count()} grupos (todos recebem o mesmo)";
-        Inspector.Children.Add(new TextBlock { Text = where, Foreground = Res("Dim"), FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+        if (RingMain() is not { } main || Sensor?.Native is not { } cfg) return;
+        Inspector.Children.Add(new TextBlock { Text = SensorOn ? FlowModeName(main.Mode) : "Efeitos do sensor", FontFamily = (FontFamily)FindResource("Display"), FontSize = 24, FontWeight = FontWeights.SemiBold });
+        Inspector.Children.Add(new TextBlock
+        {
+            Text = SensorOn ? $"O sensor está rodando o efeito dele nos {RingControllers().Sum(c => c.Count)} LEDs do anel."
+                : "O anel está seguindo o app. Escolha um efeito ao lado para entregá-lo ao sensor.",
+            Foreground = Res("Dim"), FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0),
+        });
         Spacer(16);
 
         for (int slot = 0; slot < main.Slots; slot++)
@@ -136,57 +100,68 @@ public partial class MainWindow
             var editor = new ColorEditor(at == 0 ? "Fundo" : $"Cor {at}", main.Color(at).ToHex(), Res("Text"), Res("Line"), Res("Bg"), expanded: at < 2) { Margin = new Thickness(0, 0, 0, at < 2 ? 14 : 8) };
             editor.Changed += hex =>
             {
-                foreach (var c in FlowControllers(_zone)) c.SetColor(at, Rgb.FromHex(hex));
+                foreach (var c in RingControllers()) c.SetColor(at, Rgb.FromHex(hex));
                 FlowChanged();
-                PaintFlowRows();
             };
             Inspector.Children.Add(editor);
         }
         Spacer(6);
-
-        AddSlider("Brilho do sensor (tudo)", 0, 255, cfg.Brightness, v => $"{(int)v * 100 / 255}%", v => { cfg.Brightness = (int)v; FlowChanged(); });
+        AddSlider("Brilho do sensor", 0, 255, cfg.Brightness, v => $"{(int)v * 100 / 255}%", v => { cfg.Brightness = (int)v; FlowChanged(); });
 
         _flowStatusText = new TextBlock { Text = _flowStatus, Foreground = Res("Dim"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) };
         Inspector.Children.Add(_flowStatusText);
         var save = new Button { Style = (Style)FindResource("Primary"), Content = "Salvar no aparelho", Margin = new Thickness(0, 0, 0, 8),
-            ToolTip = "Grava no sensor, para continuar assim depois de desligar o PC" };
-        save.Click += (_, _) => { _flowSoon.Stop(); SendFlow(save: true); };
+            ToolTip = "Grava este efeito no sensor: é o que ele roda ao ligar e com o app fechado" };
+        save.Click += (_, _) => { _flowSoon?.Stop(); SendFlow(save: true); };
         Inspector.Children.Add(save);
-        var reload = new Button { Style = (Style)FindResource("Flat"), Content = "Ler de novo do sensor", Margin = new Thickness(0, 0, 0, 14),
-            ToolTip = "Descarta o que não foi enviado e lê o que o sensor tem agora" };
-        reload.Click += (_, _) => ReloadFlow();
-        Inspector.Children.Add(reload);
+        if (SensorOn)
+        {
+            var reload = new Button { Style = (Style)FindResource("Flat"), Content = "Ler de novo do sensor", Margin = new Thickness(0, 0, 0, 14),
+                ToolTip = "Descarta o que não foi enviado e lê o que o sensor tem agora" };
+            reload.Click += (_, _) => ReloadFlow();
+            Inspector.Children.Add(reload);
+        }
         Inspector.Children.Add(new TextBlock
         {
-            Text = "Cada mudança vale na hora, até o sensor ficar sem energia. O aquasuite aberto pode sobrescrever o que for mudado aqui.",
+            Text = "Mudanças valem na hora, até o sensor ficar sem energia; o que fica gravado é o que você salvar. O aquasuite aberto pode sobrescrever o que for mudado aqui.",
             Foreground = Res("Dim"), FontSize = 12, TextWrapping = TextWrapping.Wrap,
         });
     }
 
     void ReloadFlow()
     {
-        if (_flow is null) return;
-        _flowSoon.Stop();
-        try { _flowEdit = _flow.Read(); SetFlowStatus($"Lido do sensor às {DateTime.Now:HH:mm:ss}."); }
+        if (Sensor?.Device is not { } dev) return;
+        _flowSoon?.Stop();
+        try { Sensor.Native = dev.Read(); SetFlowStatus($"Lido do sensor às {DateTime.Now:HH:mm:ss}."); }
         catch (Exception ex) { SetFlowStatus($"Erro: {ex.Message}"); }
-        PaintFlowRows();
-        if (FlowZone) EnterFlowZone();
+        UpdateStageTitle();
+        BuildGallery();
+        BuildInspector(animate: false);
     }
 
     void FlowChanged()
     {
+        if (_flowSoon is null)
+        {
+            _flowSoon = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _flowSoon.Tick += (_, _) => { _flowSoon.Stop(); SendFlow(save: false); };
+        }
         _flowSoon.Stop();
         _flowSoon.Start();
     }
 
-    /// <summary>One write at a time, off the screen's thread; edits made meanwhile go in the next one.</summary>
+    /// <summary>
+    /// One write at a time, off the screen's thread; edits made meanwhile go in the next one.
+    /// While the ring follows the app, edits wait in memory (the app's frames would cover them)
+    /// unless they are being saved.
+    /// </summary>
     void SendFlow(bool save)
     {
-        if (_flow is null || _flowEdit is null) return;
+        if (Sensor?.Device is not { } device || Sensor.Native is null) return;
+        if (!save && !SensorOn) { SetFlowStatus("Guardado: vale quando o anel usar um efeito do sensor."); return; }
         if (_flowWriting) { _flowAgain = true; return; }
         _flowWriting = true;
-        var edit = _flowEdit.Clone();
-        var device = _flow;
+        var edit = Sensor.Native.Clone();
         SetFlowStatus(save ? "Salvando no sensor…" : "Aplicando…");
         Task.Run(() => device.Write(edit, save)).ContinueWith(t => Dispatcher.BeginInvoke(() =>
         {

@@ -21,6 +21,7 @@ public sealed class HighFlowNextConfig
     public const int ControllerSize = 70;
     public const int Controllers = 8;
     public const int MaxHue = 1535;            // device hue: 0 red, 512 green, 1024 blue
+    public const int MaxLeds = 90;             // aquasuite's limit per strip
     const int ColorsAt = 46, Slots = 6;
     // Nothing outside the lighting block is ever changed (calibration, alarms, units live there).
     const int LightingStart = StripBrightness, LightingEnd = FirstController + Controllers * ControllerSize;
@@ -80,9 +81,9 @@ public sealed class HighFlowNextConfig
     {
         public int Index => index;
         /// <summary>0 = the RGBpx output, 1 = the sensor's own ring.</summary>
-        public int Strip => config._b[at];
-        public int FirstLed => config._b[at + 1];
-        public int Count => config._b[at + 2];
+        public int Strip { get => config._b[at]; set => config._b[at] = (byte)Math.Clamp(value, 0, 1); }
+        public int FirstLed { get => config._b[at + 1]; set => config._b[at + 1] = (byte)Math.Clamp(value, 0, MaxLeds - 1); }
+        public int Count { get => config._b[at + 2]; set => config._b[at + 2] = (byte)Math.Clamp(value, 0, MaxLeds); }
         public byte Mode { get => config._b[at + 3]; set => config._b[at + 3] = value; }
         public bool InUse => Count > 0 && Mode != 0;
         public int Slots => HighFlowNextConfig.Slots;
@@ -140,13 +141,14 @@ public sealed class HighFlowNextConfig
 public sealed class HighFlowNext : IDisposable
 {
     const string InterfaceGuid = "{4d1e55b2-f16f-11cf-88cb-001111000030}";
-    // aquasuite sends this after every change to keep it across power loss.
+    // aquasuite sends this after a change to keep it across power loss (report 0x02).
     static readonly byte[] CommitReport = [0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x34, 0xC6];
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     static extern SafeFileHandle CreateFileW(string name, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
     [DllImport("hid.dll", SetLastError = true)] static extern bool HidD_GetFeature(SafeFileHandle h, byte[] buffer, int length);
     [DllImport("hid.dll", SetLastError = true)] static extern bool HidD_SetFeature(SafeFileHandle h, byte[] buffer, int length);
+    [DllImport("hid.dll", SetLastError = true)] static extern bool HidD_SetOutputReport(SafeFileHandle h, byte[] buffer, int length);
     [DllImport("hid.dll")] static extern bool HidD_GetPreparsedData(SafeFileHandle h, out IntPtr data);
     [DllImport("hid.dll")] static extern bool HidD_FreePreparsedData(IntPtr data);
     [DllImport("hid.dll")] static extern int HidP_GetCaps(IntPtr data, out Caps caps);
@@ -160,10 +162,10 @@ public sealed class HighFlowNext : IDisposable
     }
 
     readonly SafeFileHandle _h;
-    readonly int _featureLength;
+    readonly int _featureLength, _outputLength;
     readonly Lock _lock = new();
 
-    HighFlowNext(SafeFileHandle h, int featureLength) { _h = h; _featureLength = featureLength; }
+    HighFlowNext(SafeFileHandle h, int featureLength, int outputLength) { _h = h; _featureLength = featureLength; _outputLength = outputLength; }
 
     /// <summary>The sensor, or null when it is not plugged in.</summary>
     public static HighFlowNext? Open()
@@ -174,13 +176,13 @@ public sealed class HighFlowNext : IDisposable
         {
             var handle = CreateFileW($@"\\?\HID#VID_0C70&PID_F012&MI_01#{instance}#{InterfaceGuid}", 0xC0000000, 3, IntPtr.Zero, 3, 0, IntPtr.Zero);
             if (handle.IsInvalid) { handle.Dispose(); continue; }
-            int length = 0;
+            int length = 0, output = 0;
             if (HidD_GetPreparsedData(handle, out var data))
             {
-                if (HidP_GetCaps(data, out var caps) >= 0) length = caps.FeatureLength;
+                if (HidP_GetCaps(data, out var caps) >= 0) { length = caps.FeatureLength; output = caps.OutputLength; }
                 HidD_FreePreparsedData(data);
             }
-            if (length >= HighFlowNextConfig.Length) return new HighFlowNext(handle, length);
+            if (length >= HighFlowNextConfig.Length) return new HighFlowNext(handle, length, output);
             handle.Dispose();
         }
         return null;
@@ -225,12 +227,30 @@ public sealed class HighFlowNext : IDisposable
             Thread.Sleep(300);
             if (save)
             {
-                var commit = new byte[_featureLength];
+                // An output report: this sensor declares one of exactly these 11 bytes. Sent as a
+                // feature report, Windows refused it (error 87, seen on hardware).
+                if (_outputLength < CommitReport.Length) throw new IOException("O sensor não tem o relatório de salvar esperado: nada foi salvo.");
+                var commit = new byte[_outputLength];
                 CommitReport.CopyTo(commit, 0);
-                if (!HidD_SetFeature(_h, commit, commit.Length)) throw new IOException($"A cor foi aplicada, mas o sensor recusou salvar (erro {Marshal.GetLastWin32Error()}).");
+                if (!HidD_SetOutputReport(_h, commit, commit.Length)) throw new IOException($"A cor foi aplicada, mas o sensor recusou salvar (erro {Marshal.GetLastWin32Error()}).");
                 Thread.Sleep(300);
             }
             return ReadLocked(attempts: 10);
+        }
+    }
+
+    /// <summary>
+    /// For live frames: sends the report without reading it first or after. Only the lighting
+    /// may differ from <paramref name="baseline"/>, a report read from the sensor. Never saves.
+    /// </summary>
+    public void Stream(HighFlowNextConfig baseline, HighFlowNextConfig frame)
+    {
+        if (!HighFlowNextConfig.OnlyLightingDiffers(baseline, frame)) throw new InvalidOperationException("Mudança fora da iluminação: nada foi enviado.");
+        lock (_lock)
+        {
+            var buffer = new byte[_featureLength];
+            frame.ToReport().CopyTo(buffer, 0);
+            if (!HidD_SetFeature(_h, buffer, buffer.Length)) throw new IOException($"O sensor recusou o quadro (erro {Marshal.GetLastWin32Error()}).");
         }
     }
 

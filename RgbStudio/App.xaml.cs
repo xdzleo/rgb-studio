@@ -15,6 +15,7 @@ public partial class App : Application
     Forms.NotifyIcon? _tray;
     MainWindow? _window;
     Mutex? _single;
+    readonly HighFlowNextLink _sensor = new();
     bool _ownsSingle;
     const string ShowEventName = @"Local\RgbStudioShow";
     // The installer asks a running copy to quit this way, so the lights go back to Armoury Crate.
@@ -67,7 +68,10 @@ public partial class App : Application
         Func<IRgbBackend> backend = simulate ? () => new SimulatedBackend()
             : e.Args.Contains("--sdk") ? () => new AuraSdkBackend()
             : e.Args.Contains("--usb") ? () => new HidAuraBackend()
-            : () => new HybridAuraBackend(settings.Devices.Keys.Count(k => k.StartsWith("ENE_RGB", StringComparison.Ordinal)));
+            : () => new CompositeBackend(
+                new HybridAuraBackend(settings.Devices.Keys.Count(k => k.StartsWith("ENE_RGB", StringComparison.Ordinal))),
+                new HighFlowNextBackend(_sensor));
+        _sensor.UseNative = settings.Devices.TryGetValue(HighFlowNextBackend.DeviceName, out var ring) && ring.SensorEffect;
 
         if (e.Args.Contains("--selftest"))
         {
@@ -90,7 +94,7 @@ public partial class App : Application
         _engine = new Engine(settings.Clone(), backend);
         _engine.Start();
 
-        _window = new MainWindow(_engine, settings, canSave: !simulate) { CountLedsOn = Arg("--count-leds") };
+        _window = new MainWindow(_engine, settings, canSave: !simulate) { CountLedsOn = Arg("--count-leds"), Sensor = _sensor };
         _tray = new Forms.NotifyIcon
         {
             Icon = MakeIcon(),
@@ -182,6 +186,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _engine?.Dispose();
+        _sensor.Dispose();
         if (_ownsSingle) _single?.ReleaseMutex();
         base.OnExit(e);
     }

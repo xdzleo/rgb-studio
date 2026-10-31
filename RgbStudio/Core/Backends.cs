@@ -19,6 +19,7 @@ public sealed record DeviceInfo(int Index, string Name, uint Type, int MaxLeds)
         0x00020000 => "Placa de vídeo",
         0x00080000 => "Teclado",
         0x00030000 or 0x00040000 => "Periférico",
+        0x000A0000 => "Sensor de fluxo",
         _ => $"Dispositivo 0x{Type:X8}",
     };
 

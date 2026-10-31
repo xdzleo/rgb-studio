@@ -90,4 +90,27 @@ public class HighFlowNextTests
         flow[0x2A8] = (byte)(fixedCrc >> 8); flow[0x2A9] = (byte)fixedCrc;
         Assert.False(HighFlowNextConfig.OnlyLightingDiffers(a, HighFlowNextConfig.Parse(flow)));
     }
+
+    [Fact]
+    public void The_ring_frame_spreads_eight_groups_over_ten_leds()
+    {
+        var f = HighFlowNextBackend.Layout(HighFlowNextConfig.Parse(Report()));
+        Assert.All(f.All, c => Assert.Equal((1, (byte)1), (c.Strip, c.Mode)));
+        Assert.Equal(new[] { 0, 2, 3, 4, 5, 7, 8, 9 }, f.All.Select(c => c.FirstLed));
+        Assert.Equal(10, f.All.Sum(c => c.Count));
+        Assert.Equal(255, f.Brightness);
+        Assert.True(HighFlowNextConfig.OnlyLightingDiffers(HighFlowNextConfig.Parse(Report()), f));
+    }
+
+    [Fact]
+    public void Each_group_takes_the_average_of_its_leds()
+    {
+        var ring = new Rgb[10];
+        ring[0] = new Rgb(200, 0, 0); ring[1] = new Rgb(0, 0, 100); ring[2] = new Rgb(0, 255, 0);
+        var g = HighFlowNextBackend.Groups(ring);
+        Assert.Equal(8, g.Length);
+        Assert.Equal(new Rgb(100, 0, 50), g[0]);
+        Assert.Equal(new Rgb(0, 255, 0), g[1]);
+        Assert.Equal(Rgb.Black, g[7]);
+    }
 }
