@@ -1,0 +1,165 @@
+<Window x:Class="RgbStudio.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RGB Studio" Width="1440" Height="900" MinWidth="1120" MinHeight="680"
+        Background="{StaticResource Bg}" WindowStartupLocation="CenterScreen" WindowStyle="SingleBorderWindow">
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="48" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+  </WindowChrome.WindowChrome>
+
+  <Grid x:Name="Root" ClipToBounds="True">
+    <!-- Ambient light: the colors really on the LEDs, spilling into the room. -->
+    <Rectangle Opacity="0.55">
+      <Rectangle.Fill>
+        <RadialGradientBrush Center="0.5,0.06" GradientOrigin="0.5,0.06" RadiusX="0.62" RadiusY="0.62">
+          <GradientStop x:Name="AmbientA" Color="#40FF2D55" Offset="0"/>
+          <GradientStop Color="Transparent" Offset="1"/>
+        </RadialGradientBrush>
+      </Rectangle.Fill>
+    </Rectangle>
+    <Rectangle Opacity="0.35">
+      <Rectangle.Fill>
+        <RadialGradientBrush Center="0.95,1" GradientOrigin="0.95,1" RadiusX="0.6" RadiusY="0.7">
+          <GradientStop x:Name="AmbientB" Color="#407C4DFF" Offset="0"/>
+          <GradientStop Color="Transparent" Offset="1"/>
+        </RadialGradientBrush>
+      </Rectangle.Fill>
+    </Rectangle>
+
+    <Grid Margin="20,0,20,16">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="56"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="296"/>
+        <ColumnDefinition Width="16"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="16"/>
+        <ColumnDefinition Width="348"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- Title bar -->
+      <DockPanel Grid.ColumnSpan="5" LastChildFill="False">
+        <Border Width="26" Height="26" CornerRadius="8" Background="{StaticResource AccentGrad}" Margin="0,0,12,0">
+          <Border Width="10" Height="10" CornerRadius="5" Background="White" Opacity="0.95"/>
+        </Border>
+        <TextBlock Text="RGB Studio" FontFamily="{StaticResource Display}" FontSize="19" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        <Border x:Name="StatusPill" Background="{StaticResource Raised}" CornerRadius="11" Padding="10,3" Margin="16,0,0,0" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal">
+            <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="#FFB020" Margin="0,0,7,0"/>
+            <TextBlock x:Name="StatusText" Foreground="{StaticResource Dim}" FontSize="12"/>
+          </StackPanel>
+        </Border>
+        <Button DockPanel.Dock="Right" Style="{StaticResource WindowButton}" WindowChrome.IsHitTestVisibleInChrome="True" Click="OnClose" ToolTip="Fechar (as luzes continuam na bandeja)">
+          <Path Data="M0,0 L10,10 M10,0 L0,10" Stroke="{StaticResource Dim}" StrokeThickness="1.2"/>
+        </Button>
+        <Button DockPanel.Dock="Right" Style="{StaticResource WindowButton}" WindowChrome.IsHitTestVisibleInChrome="True" Click="OnMaximize" ToolTip="Maximizar">
+          <Rectangle Width="10" Height="10" Stroke="{StaticResource Dim}" StrokeThickness="1.2"/>
+        </Button>
+        <Button DockPanel.Dock="Right" Style="{StaticResource WindowButton}" WindowChrome.IsHitTestVisibleInChrome="True" Click="OnMinimize" ToolTip="Minimizar para a bandeja">
+          <Rectangle Width="10" Height="1.2" Fill="{StaticResource Dim}"/>
+        </Button>
+      </DockPanel>
+
+      <!-- Zones -->
+      <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="16" Padding="14">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="ZONAS" Style="{StaticResource Eyebrow}" Margin="4,2,0,10"/>
+          <StackPanel DockPanel.Dock="Bottom" Margin="4,12,0,2">
+            <CheckBox x:Name="ChainBox" Checked="OnChanged" Unchecked="OnChanged"
+                      ToolTip="As zonas em &quot;Todas&quot; viram uma fita só: o efeito atravessa uma e entra na outra">
+              <TextBlock Text="Encadear zonas" FontSize="13"/>
+            </CheckBox>
+            <CheckBox x:Name="GammaBox" Checked="OnChanged" Unchecked="OnChanged" Margin="0,10,0,0"
+                      ToolTip="Ajusta as cores para como o olho enxerga: fades suaves e cores mais fiéis. Só muda o que vai para os LEDs.">
+              <TextBlock Text="Correção de gama" FontSize="13"/>
+            </CheckBox>
+          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="ZoneList" Margin="3,3,6,3"/>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+
+      <!-- Stage: the live strip, then the gallery -->
+      <Grid Grid.Row="1" Grid.Column="2">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Background="{StaticResource Panel}" CornerRadius="16" Padding="22,16,22,20" Margin="0,0,0,14" ClipToBounds="True">
+          <StackPanel>
+            <TextBlock x:Name="StageZone" Style="{StaticResource Eyebrow}"/>
+            <TextBlock x:Name="StageEffect" FontFamily="{StaticResource Display}" FontSize="30" FontWeight="SemiBold" Margin="0,2,0,14"/>
+            <Grid Height="44">
+              <Image x:Name="StageGlow" Stretch="Fill" Opacity="0.85" Margin="0,-6">
+                <Image.Effect><BlurEffect Radius="26"/></Image.Effect>
+              </Image>
+              <Border CornerRadius="7" Height="16" VerticalAlignment="Center" Background="Black">
+                <Border.OpacityMask>
+                  <VisualBrush>
+                    <VisualBrush.Visual>
+                      <Border Width="400" Height="16" CornerRadius="7" Background="White"/>
+                    </VisualBrush.Visual>
+                  </VisualBrush>
+                </Border.OpacityMask>
+                <Image x:Name="StageStrip" Stretch="Fill"/>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Background="{StaticResource Panel}" CornerRadius="16" Padding="14,12,6,10">
+          <DockPanel>
+            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+              <RadioButton x:Name="TabGradients" GroupName="tabs" Style="{StaticResource Tab}" Content="Gradientes" Checked="OnTab"/>
+              <RadioButton x:Name="TabRaw" GroupName="tabs" Style="{StaticResource Tab}" Content="RGB puro" Checked="OnTab"/>
+              <RadioButton x:Name="TabPride" GroupName="tabs" Style="{StaticResource Tab}" Content="Orgulho" Checked="OnTab"/>
+              <RadioButton x:Name="TabMotion" GroupName="tabs" Style="{StaticResource Tab}" Content="Motion" Checked="OnTab"/>
+              <RadioButton x:Name="TabScience" GroupName="tabs" Style="{StaticResource Tab}" Content="Ciência" Checked="OnTab"/>
+              <RadioButton x:Name="TabSignals" GroupName="tabs" Style="{StaticResource Tab}" Content="Sinais" Checked="OnTab"/>
+              <RadioButton x:Name="TabClassic" GroupName="tabs" Style="{StaticResource Tab}" Content="Clássicos" Checked="OnTab"/>
+              <RadioButton x:Name="TabMine" GroupName="tabs" Style="{StaticResource Tab}" Content="Meus efeitos" Checked="OnTab"/>
+              <RadioButton x:Name="TabCount" GroupName="tabs" Style="{StaticResource Tab}" Content="Contar LEDs" Checked="OnTab"/>
+            </WrapPanel>
+            <ScrollViewer x:Name="GalleryScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <WrapPanel x:Name="Gallery" Margin="4,4,0,0"/>
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <!-- Inspector -->
+      <Border Grid.Row="1" Grid.Column="4" Background="{StaticResource Panel}" CornerRadius="16" Padding="20,18">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel x:Name="Inspector" Margin="0,0,8,0">
+            <StackPanel.RenderTransform><TranslateTransform x:Name="InspectorMove"/></StackPanel.RenderTransform>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <!-- Footer -->
+      <DockPanel Grid.Row="2" Grid.ColumnSpan="5" Margin="4,14,0,0" LastChildFill="False">
+        <TextBlock Text="Limite de brilho" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"
+                   ToolTip="Teto de todos os LEDs, seja qual for o efeito. Fitas longas puxam bastante corrente."/>
+        <Slider x:Name="LimitSlider" Width="130" Minimum="5" Maximum="100" SmallChange="5" ValueChanged="OnSlider" VerticalAlignment="Center"/>
+        <TextBlock x:Name="LimitText" Foreground="{StaticResource Dim}" FontSize="12" Width="38" VerticalAlignment="Center" Margin="8,0,16,0"/>
+        <TextBlock Text="Quadros/s" VerticalAlignment="Center" FontSize="13" Margin="0,0,10,0"/>
+        <Slider x:Name="FpsSlider" Width="110" Minimum="5" Maximum="60" SmallChange="1" ValueChanged="OnSlider" VerticalAlignment="Center"/>
+        <TextBlock x:Name="FpsText" Foreground="{StaticResource Dim}" FontSize="12" Width="88" VerticalAlignment="Center" Margin="8,0,16,0"/>
+        <CheckBox x:Name="AutostartBox" Click="OnAutostart" Margin="0,0,18,0" VerticalAlignment="Center">
+          <TextBlock Text="Iniciar com o Windows" FontSize="13"/>
+        </CheckBox>
+        <CheckBox x:Name="StartMinBox" Checked="OnChanged" Unchecked="OnChanged" VerticalAlignment="Center">
+          <TextBlock Text="Iniciar na bandeja" FontSize="13"/>
+        </CheckBox>
+        <Button DockPanel.Dock="Right" Style="{StaticResource Flat}" Content="Sair" Click="OnQuit" ToolTip="Fecha o app e devolve as luzes ao Armoury Crate"/>
+        <Button x:Name="PauseButton" DockPanel.Dock="Right" Style="{StaticResource Flat}" Content="Pausar" Click="OnPause" Margin="0,0,8,0" IsEnabled="False"
+                ToolTip="Devolve as luzes ao Armoury Crate até você retomar"/>
+      </DockPanel>
+    </Grid>
+  </Grid>
+</Window>

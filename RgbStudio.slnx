@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RgbStudio.Tests/RgbStudio.Tests.csproj" />
+  <Project Path="RgbStudio/RgbStudio.csproj" />
+</Solution>

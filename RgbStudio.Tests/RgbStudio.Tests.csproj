@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The core files only: no WPF window, no hardware. -->
+    <Compile Include="..\RgbStudio\Core\Rgb.cs" Link="Core\Rgb.cs" />
+    <Compile Include="..\RgbStudio\Core\Effects.cs" Link="Core\Effects.cs" />
+    <Compile Include="..\RgbStudio\Core\Backends.cs" Link="Core\Backends.cs" />
+    <Compile Include="..\RgbStudio\Core\Engine.cs" Link="Core\Engine.cs" />
+    <Compile Include="..\RgbStudio\Core\Settings.cs" Link="Core\Settings.cs" />
+    <Compile Include="..\RgbStudio\Core\Log.cs" Link="Core\Log.cs" />
+    <Compile Include="..\RgbStudio\Core\Presets.cs" Link="Core\Presets.cs" />
+    <Compile Include="..\RgbStudio\Core\HidAuraBackend.cs" Link="Core\HidAuraBackend.cs" />
+    <Compile Include="..\RgbStudio\Core\HybridAuraBackend.cs" Link="Core\HybridAuraBackend.cs" />
+    <Compile Include="..\RgbStudio\Core\MotionEffects.cs" Link="Core\MotionEffects.cs" />
+    <Compile Include="..\RgbStudio\Core\SignalEffects.cs" Link="Core\SignalEffects.cs" />
+    <Compile Include="..\RgbStudio\Core\ScienceEffects.cs" Link="Core\ScienceEffects.cs" />
+    <Compile Include="..\RgbStudio\Core\SimulationEffects.cs" Link="Core\SimulationEffects.cs" />
+    <Compile Include="..\RgbStudio\Core\GradientEffects.cs" Link="Core\GradientEffects.cs" />
+  </ItemGroup>
+
+</Project>
+
+
+
+
+
+
+
