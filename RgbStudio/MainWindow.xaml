@@ -118,6 +118,7 @@
               <RadioButton x:Name="TabGradients" GroupName="tabs" Style="{StaticResource Tab}" Content="Gradientes" Checked="OnTab"/>
               <RadioButton x:Name="TabRaw" GroupName="tabs" Style="{StaticResource Tab}" Content="RGB puro" Checked="OnTab"/>
               <RadioButton x:Name="TabPride" GroupName="tabs" Style="{StaticResource Tab}" Content="Orgulho" Checked="OnTab"/>
+              <RadioButton x:Name="TabCountries" GroupName="tabs" Style="{StaticResource Tab}" Content="Países" Checked="OnTab"/>
               <RadioButton x:Name="TabMotion" GroupName="tabs" Style="{StaticResource Tab}" Content="Motion" Checked="OnTab"/>
               <RadioButton x:Name="TabScience" GroupName="tabs" Style="{StaticResource Tab}" Content="Ciência" Checked="OnTab"/>
               <RadioButton x:Name="TabSignals" GroupName="tabs" Style="{StaticResource Tab}" Content="Sinais" Checked="OnTab"/>

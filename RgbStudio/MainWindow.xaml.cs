@@ -213,6 +213,7 @@ public partial class MainWindow : Window
         "Gradientes" => TabGradients,
         "RGB puro" => TabRaw,
         "Orgulho" => TabPride,
+        "Países" => TabCountries,
         "Ciência" => TabScience,
         "Sinais" => TabSignals,
         "Mine" => TabMine,
@@ -223,7 +224,7 @@ public partial class MainWindow : Window
 
     void OnTab(object sender, RoutedEventArgs e)
     {
-        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : sender == TabSensor ? "Sensor" : "Clássicos";
+        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabCountries ? "Países" :sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : sender == TabSensor ? "Sensor" : "Clássicos";
         // Counting lights take over a zone; leaving the tab gives it back.
         if (_tab != "Count" && _settings.LocatorZone is not null) { _settings.LocatorZone = null; Changed(); }
         if (!_loading)
@@ -829,7 +830,7 @@ public partial class MainWindow : Window
         var watch = System.Diagnostics.Stopwatch.StartNew();
         await Settle(3000);
         Log.Write($"smoke: tela a {(_tickCount - firstTick) / watch.Elapsed.TotalSeconds:0.0} atualizações/s");
-        foreach (var tab in new[] { TabGradients, TabRaw, TabPride, TabMotion, TabScience, TabSignals, TabClassic })
+        foreach (var tab in new[] { TabGradients, TabRaw, TabPride, TabCountries, TabMotion, TabScience, TabSignals, TabClassic })
         {
             tab.IsChecked = true;
             await Settle(800);

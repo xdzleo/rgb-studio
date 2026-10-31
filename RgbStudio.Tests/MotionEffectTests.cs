@@ -16,6 +16,8 @@ public class MotionEffectTests
     {
         Assert.Equal(17, EffectCatalog.All.Count(e => e.Category == "RGB puro"));
         Assert.Equal(24, EffectCatalog.All.Count(e => e.Category == "Orgulho"));
+        Assert.True(EffectCatalog.All.Count(e => e.Category == "Países") >= 70);
+        Assert.Equal("Países", EffectCatalog.Get("grad-brasil").Category);   // moved, same id: saved zones keep it
         Assert.True(EffectCatalog.All.Count(e => e.Category == "Gradientes") >= 90);
         Assert.Equal(25, EffectCatalog.All.Count(e => e.Category == "Motion"));
         Assert.Equal(12, EffectCatalog.All.Count(e => e.Category == "Ciência"));

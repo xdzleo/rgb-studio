@@ -254,6 +254,87 @@ public static class GradientCatalog
         Soft("lesbica-suave", "Lésbica suave", GradientMotion.Pulse, "#D52D00", "#FF9A56", "#FFFFFF", "#D162A4", "#A30262"),
         Soft("nb-suave", "Não binário suave", GradientMotion.Zoom, "#FCF434", "#FFFFFF", "#9C59D1"),
 
+        // Países: as cores de cada bandeira em faixas, na ordem em que aparecem nela. Uma cor
+        // repetida pesa mais, como o campo verde do Brasil. O id do Brasil é o de antes.
+        Country("brasil", "Brasil", "#009C3B", "#FFDF00", "#002776", "#FFDF00"),
+        new PaletteGradientEffect("brasil-ondas", "Brasil em ondas", GradientMotion.Ripple, ["#009C3B", "#FFDF00", "#002776", "#FFFFFF"], Countries),
+        new PaletteGradientEffect("brasil-festa", "Brasil festa", GradientMotion.Glitter, ["#009C3B", "#FFDF00", "#002776"], Countries),
+        // Américas
+        Country("argentina", "Argentina", "#74ACDF", "#FFFFFF", "#F6B40E", "#FFFFFF"),
+        Country("uruguai", "Uruguai", "#FFFFFF", "#0038A8", "#FFFFFF", "#0038A8", "#FCD116"),
+        Country("paraguai", "Paraguai", "#D52B1E", "#FFFFFF", "#0038A8"),
+        Country("chile", "Chile", "#FFFFFF", "#D52B1E", "#0039A6"),
+        Country("bolivia", "Bolívia", "#D52B1E", "#F9E300", "#007934"),
+        Country("peru", "Peru", "#D91023", "#FFFFFF", "#D91023"),
+        Country("equador", "Equador", "#FFDD00", "#FFDD00", "#034EA2", "#ED1C24"),
+        Country("colombia", "Colômbia", "#FCD116", "#FCD116", "#003893", "#CE1126"),
+        Country("venezuela", "Venezuela", "#FFCC00", "#00247D", "#FFFFFF", "#00247D", "#CF142B"),
+        Country("mexico", "México", "#006847", "#FFFFFF", "#CE1126"),
+        Country("cuba", "Cuba", "#002A8F", "#FFFFFF", "#CF142B", "#FFFFFF"),
+        Country("jamaica", "Jamaica", "#009B3A", "#FED100", "#000000", "#FED100"),
+        Country("costa-rica", "Costa Rica", "#002B7F", "#FFFFFF", "#CE1126", "#FFFFFF"),
+        Country("eua", "Estados Unidos", "#B22234", "#FFFFFF", "#B22234", "#FFFFFF", "#3C3B6E"),
+        Country("canada", "Canadá", "#FF0000", "#FFFFFF", "#FF0000"),
+        // Europa
+        Country("portugal", "Portugal", "#046A38", "#DA291C", "#DA291C", "#FFE900"),
+        Country("espanha", "Espanha", "#AA151B", "#F1BF00", "#F1BF00", "#AA151B"),
+        Country("franca", "França", "#0055A4", "#FFFFFF", "#EF4135"),
+        Country("italia", "Itália", "#009246", "#FFFFFF", "#CE2B37"),
+        Country("alemanha", "Alemanha", "#000000", "#DD0000", "#FFCE00"),
+        Country("reino-unido", "Reino Unido", "#012169", "#FFFFFF", "#C8102E", "#FFFFFF"),
+        Country("inglaterra", "Inglaterra", "#FFFFFF", "#FFFFFF", "#CE1124"),
+        Country("escocia", "Escócia", "#005EB8", "#005EB8", "#FFFFFF"),
+        Country("pais-de-gales", "País de Gales", "#FFFFFF", "#00B140", "#C8102E"),
+        Country("irlanda", "Irlanda", "#169B62", "#FFFFFF", "#FF883E"),
+        Country("holanda", "Holanda", "#AE1C28", "#FFFFFF", "#21468B"),
+        Country("belgica", "Bélgica", "#000000", "#FDDA24", "#EF3340"),
+        Country("suica", "Suíça", "#FF0000", "#FF0000", "#FFFFFF"),
+        Country("austria", "Áustria", "#ED2939", "#FFFFFF", "#ED2939"),
+        Country("suecia", "Suécia", "#006AA7", "#FECC00", "#006AA7"),
+        Country("noruega", "Noruega", "#BA0C2F", "#FFFFFF", "#00205B", "#FFFFFF"),
+        Country("dinamarca", "Dinamarca", "#C8102E", "#FFFFFF", "#C8102E"),
+        Country("finlandia", "Finlândia", "#FFFFFF", "#002F6C", "#FFFFFF"),
+        Country("islandia", "Islândia", "#02529C", "#FFFFFF", "#DC1E35", "#FFFFFF"),
+        Country("polonia", "Polônia", "#FFFFFF", "#DC143C"),
+        Country("ucrania", "Ucrânia", "#0057B7", "#FFD700"),
+        Country("russia", "Rússia", "#FFFFFF", "#0039A6", "#D52B1E"),
+        Country("grecia", "Grécia", "#0D5EAF", "#FFFFFF"),
+        Country("croacia", "Croácia", "#FF0000", "#FFFFFF", "#171796"),
+        Country("servia", "Sérvia", "#C6363C", "#0C4076", "#FFFFFF"),
+        Country("romenia", "Romênia", "#002B7F", "#FCD116", "#CE1126"),
+        Country("hungria", "Hungria", "#CE2939", "#FFFFFF", "#477050"),
+        Country("tchequia", "Tchéquia", "#FFFFFF", "#D7141A", "#11457E"),
+        Country("turquia", "Turquia", "#E30A17", "#E30A17", "#FFFFFF"),
+        // Ásia e Oceania
+        Country("japao", "Japão", "#FFFFFF", "#FFFFFF", "#BC002D"),
+        Country("china", "China", "#EE1C25", "#EE1C25", "#FFFF00"),
+        Country("coreia-do-sul", "Coreia do Sul", "#FFFFFF", "#CD2E3A", "#0047A0", "#000000"),
+        Country("india", "Índia", "#FF9933", "#FFFFFF", "#000080", "#FFFFFF", "#138808"),
+        Country("tailandia", "Tailândia", "#A51931", "#F4F5F8", "#2D2A4A", "#2D2A4A", "#F4F5F8"),
+        Country("vietna", "Vietnã", "#DA251D", "#DA251D", "#FFFF00"),
+        Country("indonesia", "Indonésia", "#FF0000", "#FFFFFF"),
+        Country("filipinas", "Filipinas", "#0038A8", "#FFFFFF", "#FCD116", "#FFFFFF", "#CE1126"),
+        Country("israel", "Israel", "#FFFFFF", "#0038B8"),
+        Country("arabia-saudita", "Arábia Saudita", "#006C35", "#006C35", "#FFFFFF"),
+        Country("emirados", "Emirados Árabes", "#FF0000", "#00732F", "#FFFFFF", "#000000"),
+        Country("ira", "Irã", "#239F40", "#FFFFFF", "#DA0000"),
+        Country("australia", "Austrália", "#012169", "#FFFFFF", "#E4002B", "#FFFFFF"),
+        Country("nova-zelandia", "Nova Zelândia", "#012169", "#C8102E", "#FFFFFF", "#012169"),
+        // África
+        Country("angola", "Angola", "#CC092F", "#FFCB00", "#000000"),
+        Country("mocambique", "Moçambique", "#009739", "#FFFFFF", "#000000", "#FFFFFF", "#FCE100", "#D21034"),
+        Country("cabo-verde", "Cabo Verde", "#003893", "#FFFFFF", "#CF2027", "#FFFFFF", "#F7D116"),
+        Country("africa-do-sul", "África do Sul", "#007A4D", "#FFB612", "#000000", "#FFB612", "#DE3831", "#FFFFFF", "#002395", "#FFFFFF"),
+        Country("nigeria", "Nigéria", "#008751", "#FFFFFF", "#008751"),
+        Country("gana", "Gana", "#CE1126", "#FCD116", "#000000", "#FCD116", "#006B3F"),
+        Country("senegal", "Senegal", "#00853F", "#FDEF42", "#E31B23"),
+        Country("camaroes", "Camarões", "#007A5E", "#CE1126", "#FCD116"),
+        Country("costa-do-marfim", "Costa do Marfim", "#F77F00", "#FFFFFF", "#009E60"),
+        Country("quenia", "Quênia", "#000000", "#FFFFFF", "#BB0000", "#FFFFFF", "#006600"),
+        Country("etiopia", "Etiópia", "#078930", "#FCDD09", "#0F47AF", "#FCDD09", "#DA121A"),
+        Country("egito", "Egito", "#CE1126", "#FFFFFF", "#C09300", "#FFFFFF", "#000000"),
+        Country("marrocos", "Marrocos", "#C1272D", "#C1272D", "#006233"),
+
         // Datas e festa
         G("natal", "Natal", GradientMotion.Bands, "#FF0018", "#FFFFFF", "#00B140"),
         G("ano-novo", "Ano-novo", GradientMotion.Glitter, "#FFD700", "#FFFFFF", "#C0C0FF", "#FFB300"),
@@ -264,7 +345,6 @@ public static class GradientCatalog
         G("disco", "Discoteca", GradientMotion.Glitter, "#FF00AA", "#FFB300", "#7A00FF", "#00D5FF"),
         G("rave", "Rave", GradientMotion.Collide, "#39FF14", "#FF00FF", "#00FFFF", "#FFFF00"),
         G("confete", "Confete", GradientMotion.Chunks, "#FF595E", "#FFCA3A", "#8AC926", "#1982C4", "#6A4C93"),
-        G("brasil", "Brasil", GradientMotion.Bands, "#009C3B", "#FFDF00", "#002776", "#FFDF00"),
         // Sabores
         G("melancia", "Melancia", GradientMotion.Bands, "#FF2D55", "#FF6B81", "#FFFFFF", "#00B050"),
         G("acai", "Açaí", GradientMotion.Drift, "#5B0E91", "#B5179E", "#3C096C", "#9D4EDD"),
@@ -302,7 +382,10 @@ public static class GradientCatalog
 
     static PaletteGradientEffect G(string id, string name, GradientMotion motion, params string[] stops) => new(id, name, motion, stops);
 
-    const string Rgbs = "RGB puro", Pride = "Orgulho";
+    const string Rgbs = "RGB puro", Pride = "Orgulho", Countries = "Países";
+
+    static PaletteGradientEffect Country(string id, string name, params string[] stripes) =>
+        new(id, name, GradientMotion.Bands, stripes, Countries, pace: 0.75);
 
     /// <summary>The raw spectrum at full saturation: no palette, every hue in order.</summary>
     static PaletteGradientEffect Raw(string id, string name, GradientMotion motion, double repeats = 1, double pace = 1) =>
