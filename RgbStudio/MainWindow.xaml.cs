@@ -288,17 +288,22 @@ public partial class MainWindow : Window
 
         if (_tab == "Mine")
         {
-            var create = new Button { Style = (Style)FindResource("Flat"), Width = 176, Height = 116, Margin = new Thickness(0, 0, 12, 12) };
-            create.Content = new StackPanel
+            Button Make(string glyph, string text, Action click)
             {
-                Children =
+                var b = new Button { Style = (Style)FindResource("Flat"), Width = 176, Height = 116, Margin = new Thickness(0, 0, 12, 12) };
+                b.Content = new StackPanel
                 {
-                    new TextBlock { Text = "+", FontSize = 30, HorizontalAlignment = HorizontalAlignment.Center },
-                    new TextBlock { Text = "Criar a partir do atual", FontSize = 13, Foreground = Res("Dim") },
-                },
-            };
-            create.Click += (_, _) => CreateEffect();
-            Gallery.Children.Add(create);
+                    Children =
+                    {
+                        new TextBlock { Text = glyph, FontSize = 30, HorizontalAlignment = HorizontalAlignment.Center },
+                        new TextBlock { Text = text, FontSize = 13, Foreground = Res("Dim"), HorizontalAlignment = HorizontalAlignment.Center },
+                    },
+                };
+                b.Click += (_, _) => click();
+                return b;
+            }
+            Gallery.Children.Add(Make("●", "Nova cor estática", CreateStaticColor));
+            Gallery.Children.Add(Make("+", "Criar a partir do atual", CreateEffect));
         }
         FitGallery();
     }
@@ -356,9 +361,19 @@ public partial class MainWindow : Window
         BuildInspector();
     }
 
-    void CreateEffect()
+    void CreateEffect() => AddMine(Presets.NewFrom(_settings.Resolve(_selected), $"Meu efeito {_settings.MyEffects.Count + 1}"));
+
+    /// <summary>One fixed color, saved with a name; it starts from the zone's current first color.</summary>
+    void CreateStaticColor()
     {
-        var preset = Presets.NewFrom(_settings.Resolve(_selected), $"Meu efeito {_settings.MyEffects.Count + 1}");
+        var preset = Presets.NewFrom(_settings.Builtin("static"), $"Cor estática {_settings.MyEffects.Count(p => p.Effect == "static") + 1}");
+        preset.Color1 = _settings.Resolve(_selected).Color1;
+        preset.Brightness = 100;
+        AddMine(preset);
+    }
+
+    void AddMine(EffectPreset preset)
+    {
         _settings.MyEffects.Add(preset);
         _selected = preset.Id;
         _settings.Place(ZoneDevice?.Name, preset.Id);

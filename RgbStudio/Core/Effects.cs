@@ -56,7 +56,7 @@ public sealed class StaticEffect : Effect
     public override string Blurb => "Uma cor só, firme.";
     public override bool UsesSpeed => false;
     public override string Id => "static";
-    public override string Name => "Estático";
+    public override string Name => "Cor estática";
     public override string Glyph => "●";
     public override void Render(Span<Rgb> leds, double t, EffectParams p, int seed) => leds.Fill(p.Color1);
 }
