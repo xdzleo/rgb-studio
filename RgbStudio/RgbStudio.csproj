@@ -11,7 +11,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <AssemblyName>RgbStudio</AssemblyName>
     <RootNamespace>RgbStudio</RootNamespace>
-    <Version>0.9.1</Version>
+    <Version>0.10.0</Version>
     <!-- WinForms is only here for the tray icon and the color dialog. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>

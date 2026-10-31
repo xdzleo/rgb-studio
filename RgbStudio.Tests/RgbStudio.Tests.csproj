@@ -29,6 +29,7 @@
     <Compile Include="..\RgbStudio\Core\ScienceEffects.cs" Link="Core\ScienceEffects.cs" />
     <Compile Include="..\RgbStudio\Core\SimulationEffects.cs" Link="Core\SimulationEffects.cs" />
     <Compile Include="..\RgbStudio\Core\GradientEffects.cs" Link="Core\GradientEffects.cs" />
+    <Compile Include="..\RgbStudio\Core\HighFlowNext.cs" Link="Core\HighFlowNext.cs" />
   </ItemGroup>
 
 </Project>

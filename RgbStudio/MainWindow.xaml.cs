@@ -213,12 +213,13 @@ public partial class MainWindow : Window
         "Sinais" => TabSignals,
         "Mine" => TabMine,
         "Count" => TabCount,
+        "Flow" => TabFlow,
         _ => TabClassic,
     };
 
     void OnTab(object sender, RoutedEventArgs e)
     {
-        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : "Clássicos";
+        _tab = sender == TabMotion ? "Motion" : sender == TabGradients ? "Gradientes" : sender == TabRaw ? "RGB puro" : sender == TabPride ? "Orgulho" : sender == TabScience ? "Ciência" : sender == TabSignals ? "Sinais" : sender == TabMine ? "Mine" : sender == TabCount ? "Count" : sender == TabFlow ? "Flow" : "Clássicos";
         // Counting lights take over a zone; leaving the tab gives it back.
         if (_tab != "Count" && _settings.LocatorZone is not null) { _settings.LocatorZone = null; Changed(); }
         if (!_loading)
@@ -230,7 +231,7 @@ public partial class MainWindow : Window
 
     void ShowSelectedInGallery()
     {
-        if (_tab == "Count") return;
+        if (_tab is "Count" or "Flow") return;
         var p = _settings.Resolve(_selected);
         var tab = p.IsBuiltin ? EffectCatalog.Get(p.Effect).Category : "Mine";
         if (tab != _tab) TabFor(tab).IsChecked = true;
@@ -243,7 +244,7 @@ public partial class MainWindow : Window
         double room = Gallery.ActualWidth;
         if (room <= 0) return;
         const double Wanted = 176, Gap = 12;
-        double width = _tab == "Count"
+        double width = _tab is "Count" or "Flow"
             ? room - Gap      // one zone per row
             : Math.Floor(room / Math.Max(1, Math.Floor(room / (Wanted + Gap)))) - Gap;
         foreach (FrameworkElement card in Gallery.Children) card.Width = width;
@@ -254,6 +255,12 @@ public partial class MainWindow : Window
         Gallery.Children.Clear();
         _thumbs.Clear();
         _cards.Clear();
+        if (_tab == "Flow")
+        {
+            BuildFlowTab();
+            FitGallery();
+            return;
+        }
         if (_tab == "Count")
         {
             BuildCountTab();

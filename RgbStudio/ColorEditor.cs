@@ -122,14 +122,5 @@ public sealed class ColorEditor : StackPanel
         _val.Background = new LinearGradientBrush(Colors.Black, hueColor, 0);
     }
 
-    static (double H, double S, double V) ToHsv(Rgb c)
-    {
-        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
-        double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b)), d = max - min;
-        double h = d == 0 ? 0
-            : max == r ? 60 * (((g - b) / d % 6 + 6) % 6)
-            : max == g ? 60 * ((b - r) / d + 2)
-            : 60 * ((r - g) / d + 4);
-        return (h, max == 0 ? 0 : d / max, max);
-    }
+    static (double H, double S, double V) ToHsv(Rgb c) => Rgb.ToHsv(c);
 }

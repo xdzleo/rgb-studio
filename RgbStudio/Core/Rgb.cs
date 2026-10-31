@@ -35,6 +35,18 @@ public readonly record struct Rgb(byte R, byte G, byte B)
         return new Rgb(ToByte(r + m), ToByte(g + m), ToByte(b + m));
     }
 
+    /// <summary>The inverse of <see cref="FromHsv"/>: hue 0-360, saturation and value 0-1.</summary>
+    public static (double H, double S, double V) ToHsv(Rgb c)
+    {
+        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+        double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b)), d = max - min;
+        double h = d == 0 ? 0
+            : max == r ? 60 * (((g - b) / d % 6 + 6) % 6)
+            : max == g ? 60 * ((b - r) / d + 2)
+            : 60 * ((r - g) / d + 4);
+        return (h, max == 0 ? 0 : d / max, max);
+    }
+
     public Rgb Scale(double f) => new(ToByte(R / 255.0 * f), ToByte(G / 255.0 * f), ToByte(B / 255.0 * f));
 
     public static Rgb Lerp(Rgb a, Rgb b, double t)
