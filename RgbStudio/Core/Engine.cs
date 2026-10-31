@@ -175,8 +175,19 @@ public sealed class Engine : IDisposable
         Frame = frame;
     }
 
-    static readonly byte[] GammaTable = Enumerable.Range(0, 256)
-        .Select(v => (byte)Math.Round(Math.Pow(v / 255.0, 2.2) * 255)).ToArray();
+    /// <summary>
+    /// Gamma 2.2 on how the channels relate, not on how bright the LED is: the strongest channel
+    /// keeps the value the effect asked for, the others follow it on the curve. Plain gamma
+    /// also took the light down: a flag's navy #3C3B6E went to (11,11,39), its red to 65%,
+    /// and at 100% the LEDs were far from full.
+    /// </summary>
+    public static Rgb GammaKeepingPeak(Rgb c)
+    {
+        int peak = Math.Max(c.R, Math.Max(c.G, c.B));
+        if (peak == 0) return Rgb.Black;
+        byte Channel(byte v) => (byte)Math.Round(peak * Math.Pow((double)v / peak, 2.2));
+        return new Rgb(Channel(c.R), Channel(c.G), Channel(c.B));
+    }
 
     /// <summary>A WS2812 at full white is commonly rated about 60 mA: 20 mA per channel, as a worst case.</summary>
     const double MilliampsPerChannel = 20;
@@ -200,8 +211,7 @@ public sealed class Engine : IDisposable
         if (s.Gamma)
         {
             output = new Rgb[colors.Length];
-            for (int k = 0; k < colors.Length; k++)
-                output[k] = new Rgb(GammaTable[colors[k].R], GammaTable[colors[k].G], GammaTable[colors[k].B]);
+            for (int k = 0; k < colors.Length; k++) output[k] = GammaKeepingPeak(colors[k]);
         }
         var zone = s.For(device.Name);
         if (zone.RedGain != 100 || zone.GreenGain != 100 || zone.BlueGain != 100)

@@ -327,6 +327,19 @@ public class MotionEffectTests
     }
 
     [Fact]
+    public void Gamma_keeps_each_leds_strongest_channel()
+    {
+        // The flag navy and red: plain gamma took them to (11,11,39) and 65% red.
+        var navy = Engine.GammaKeepingPeak(new Rgb(0x3C, 0x3B, 0x6E));
+        Assert.Equal(0x6E, navy.B);
+        Assert.InRange(navy.R, 27, 31);
+        var red = Engine.GammaKeepingPeak(new Rgb(0xB2, 0x22, 0x34));
+        Assert.Equal(0xB2, red.R);
+        Assert.Equal(Rgb.White, Engine.GammaKeepingPeak(Rgb.White));
+        Assert.Equal(Rgb.Black, Engine.GammaKeepingPeak(Rgb.Black));
+    }
+
+    [Fact]
     public void A_connector_never_goes_over_its_estimated_budget_and_others_are_left_alone()
     {
         var backend = new SimulatedBackend();

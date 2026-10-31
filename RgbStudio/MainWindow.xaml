@@ -73,7 +73,7 @@
               <TextBlock Text="Encadear zonas" FontSize="13"/>
             </CheckBox>
             <CheckBox x:Name="GammaBox" Checked="OnChanged" Unchecked="OnChanged" Margin="0,10,0,0"
-                      ToolTip="Ajusta as cores para como o olho enxerga: fades suaves e cores mais fiéis. Só muda o que vai para os LEDs.">
+                      ToolTip="Ajusta a mistura das cores para como o olho enxerga, sem baixar o brilho: o canal mais forte de cada LED fica como o efeito pediu. Só muda o que vai para os LEDs.">
               <TextBlock Text="Correção de gama" FontSize="13"/>
             </CheckBox>
           </StackPanel>
