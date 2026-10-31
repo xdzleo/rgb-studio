@@ -201,9 +201,14 @@ public sealed class HidAuraBackend : IRgbBackend
 public static class ServiceControl
 {
     const string ServiceName = "LightingService";
+    const int DoesNotExist = 1060;   // ERROR_SERVICE_DOES_NOT_EXIST, from sc.exe
+
+    /// <summary>False once Armoury Crate is uninstalled: then nothing writes over the USB colors.</summary>
+    public static bool Installed => Sc($"query {ServiceName}", out _) != DoesNotExist;
 
     public static void Stop()
     {
+        if (!Installed) { Log.Write($"{ServiceName} não está instalado (Armoury Crate removido): nada para parar."); return; }
         Sc($"stop {ServiceName}", out _);
         var deadline = DateTime.UtcNow.AddSeconds(20);
         while (DateTime.UtcNow < deadline)
@@ -219,7 +224,11 @@ public static class ServiceControl
         throw new InvalidOperationException($"Não consegui parar o {ServiceName}; ele escreveria por cima das cores.");
     }
 
-    public static void Start() => Log.Write($"{ServiceName} religado (sc {Sc($"start {ServiceName}", out _)}).");
+    public static void Start()
+    {
+        if (!Installed) return;
+        Log.Write($"{ServiceName} religado (sc {Sc($"start {ServiceName}", out _)}).");
+    }
 
     static int Sc(string args, out string output)
     {
