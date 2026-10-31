@@ -32,10 +32,13 @@ Testado em ROG Crosshair X870E Apex, com memórias ADATA XPG Lancer RGB e um res
 
 Baixe em [Releases](../../releases):
 
-- **`RgbStudio-win-x64.zip`:** já inclui o .NET.
+- **`RgbStudio-<versão>-setup.exe`:** instalador, já inclui o .NET. Instala em Arquivos de Programas e cria atalhos no Menu Iniciar e, se quiser, na Área de Trabalho. Desinstale por Configurações > Aplicativos; seus efeitos e ajustes ficam em `%APPDATA%\RgbStudio`.
+- **`RgbStudio-win-x64.zip`:** a mesma coisa sem instalar, já inclui o .NET.
 - **`RgbStudio-win-x64-requer-dotnet10.zip`:** menor, precisa do [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0).
 
-Extraia e abra `RgbStudio.exe`. A primeira conexão leva cerca de 15 segundos. O executável não é assinado, então o Windows pode mostrar um aviso.
+A primeira conexão leva cerca de 15 segundos. Nem o instalador nem o executável são assinados, então o Windows pode mostrar um aviso.
+
+Ao atualizar ou desinstalar, o instalador pede ao app aberto que saia pelo caminho normal, devolvendo as luzes ao Armoury Crate (o mesmo que `RgbStudio.exe --quit`).
 
 ## Como funciona
 
@@ -64,6 +67,8 @@ Requer o .NET 10 SDK.
 dotnet test RgbStudio.Tests -c Release
 dotnet publish RgbStudio/RgbStudio.csproj -c Release -o publish
 ```
+
+O instalador sai de `installer\build.ps1`, que roda os testes, publica e compila com o [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`).
 
 Sem hardware: `dotnet RgbStudio/bin/Release/net10.0-windows/RgbStudio.dll --simulate`.
 

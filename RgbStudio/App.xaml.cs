@@ -17,6 +17,8 @@ public partial class App : Application
     Mutex? _single;
     bool _ownsSingle;
     const string ShowEventName = @"Local\RgbStudioShow";
+    // The installer asks a running copy to quit this way, so the lights go back to Armoury Crate.
+    const string QuitEventName = @"Local\RgbStudioQuit";
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -25,13 +27,17 @@ public partial class App : Application
         bool simulate = e.Args.Contains("--simulate");
 
         // One instance: two would fight over the same lights. A simulation touches no lights.
-        if (!simulate)
+        bool quit = e.Args.Contains("--quit");
+        if (!simulate || quit)
         {
             _single = new Mutex(true, @"Local\RgbStudio", out _ownsSingle);
-            if (!_ownsSingle)
+            if (!_ownsSingle || quit)
             {
-                // Already running, likely hidden in the tray: ask it to show itself.
-                try { using var show = EventWaitHandle.OpenExisting(ShowEventName); show.Set(); } catch (WaitHandleCannotBeOpenedException) { }
+                // Already running, likely hidden in the tray: ask it to show itself, or to quit.
+                // --quit with nothing running just ends here.
+                var request = quit ? QuitEventName : ShowEventName;
+                if (!_ownsSingle)
+                    try { using var signal = EventWaitHandle.OpenExisting(request); signal.Set(); } catch (WaitHandleCannotBeOpenedException) { }
                 Shutdown();
                 return;
             }
@@ -40,6 +46,11 @@ public partial class App : Application
             {
                 while (showRequests.WaitOne()) Dispatcher.BeginInvoke(ShowWindow);
             }) { IsBackground = true, Name = "Show requests" }.Start();
+            var quitRequests = new EventWaitHandle(false, EventResetMode.AutoReset, QuitEventName);
+            new Thread(() =>
+            {
+                if (quitRequests.WaitOne()) Dispatcher.BeginInvoke(Quit);
+            }) { IsBackground = true, Name = "Quit requests" }.Start();
         }
 
         Log.Write($"RGB Studio {typeof(App).Assembly.GetName().Version} iniciado ({string.Join(' ', e.Args)})");
