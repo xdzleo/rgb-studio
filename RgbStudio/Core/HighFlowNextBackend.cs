@@ -39,7 +39,7 @@ public sealed class HighFlowNextLink : IDisposable
 /// <summary>
 /// The high flow NEXT's ring as one more zone for the engine. The sensor takes no colors per
 /// LED, so its 8 LED groups are spread over the ring's 10 LEDs, each set to a fixed color,
-/// and the settings are resent for every frame (30/s held on hardware with no refusals).
+/// and the settings are resent as frames, at most 20/s (see MinGap).
 /// Frames go to the sensor's memory only, never saved. Releasing puts its own lighting back.
 /// </summary>
 public sealed class HighFlowNextBackend : IRgbBackend
@@ -49,14 +49,18 @@ public sealed class HighFlowNextBackend : IRgbBackend
     // 11 positions: with 0-9 one LED stayed dark on the hardware. A position past the real end is ignored.
     const int RingLeds = 11;
     static readonly int[] GroupSizes = [2, 1, 1, 1, 2, 1, 1, 2];   // 8 groups, 11 positions
-    static readonly TimeSpan Refresh = TimeSpan.FromSeconds(1), Rebase = TimeSpan.FromSeconds(30);
+    // At 35-56 frames/s, with aquasuite also talking to it, the sensor stopped answering
+    // feature reports (error 121, then 31) until it was unplugged: the frames are capped,
+    // refusals back off, and a few in a row end the streaming instead of insisting.
+    static readonly TimeSpan MinGap = TimeSpan.FromMilliseconds(50), Refresh = TimeSpan.FromSeconds(5), Backoff = TimeSpan.FromSeconds(5);
+    const int GiveUpAfter = 3;
 
     readonly HighFlowNextLink _link;
     HighFlowNextConfig? _baseline, _frame;
     readonly Rgb[] _last = new Rgb[GroupSizes.Length];
-    long _lastSent, _lastRebase;
-    bool _streaming, _nativeShown;
-    string? _lastError;
+    long _lastSent, _lastError;
+    int _errors;
+    bool _streaming, _nativeShown, _gaveUp;
 
     public HighFlowNextBackend(HighFlowNextLink link) => _link = link;
 
@@ -67,7 +71,6 @@ public sealed class HighFlowNextBackend : IRgbBackend
         if (!_link.Open() || _link.Native is null) return [];
         _baseline = _link.Native.Clone();
         _frame = Layout(_baseline);
-        _lastRebase = Stopwatch.GetTimestamp();
         return [new DeviceInfo(0, DeviceName, DeviceType, RingLeds)];
     }
 
@@ -117,9 +120,11 @@ public sealed class HighFlowNextBackend : IRgbBackend
                 return;
             }
             _nativeShown = false;
+            if (_gaveUp) return;
 
             long now = Stopwatch.GetTimestamp();
-            if (Stopwatch.GetElapsedTime(_lastRebase, now) >= Rebase) RebaseOn(dev);
+            if (_errors > 0 && Stopwatch.GetElapsedTime(_lastError, now) < Backoff) return;
+            if (_streaming && Stopwatch.GetElapsedTime(_lastSent, now) < MinGap) return;
 
             var groups = Groups(colors);
             bool due = !_streaming || Stopwatch.GetElapsedTime(_lastSent, now) >= Refresh;
@@ -127,48 +132,23 @@ public sealed class HighFlowNextBackend : IRgbBackend
             groups.CopyTo(_last, 0);
             for (int g = 0; g < groups.Length; g++)
                 for (int s = 0; s < _frame[g].Slots; s++) _frame[g].SetColor(s, groups[g]);
+            _lastSent = now;
             dev.Stream(_baseline, _frame);
             _streaming = true;
-            _lastSent = now;
-            _lastError = null;
+            _errors = 0;
         }
         catch (Exception ex)
         {
-            // A frame the sensor refuses is skipped; the next one tries again.
-            if (ex.Message != _lastError) Log.Write($"high flow NEXT: {ex.Message}");
-            _lastError = ex.Message;
+            _errors++;
+            _lastError = Stopwatch.GetTimestamp();
+            Log.Write($"high flow NEXT: {ex.Message} (recusa {_errors} seguida)");
+            if (_errors >= GiveUpAfter)
+            {
+                _gaveUp = true;
+                _streaming = false;
+                Log.Write("high flow NEXT: parei de mandar quadros para não travar o sensor; volta ao reabrir o app.");
+            }
         }
-    }
-
-    /// <summary>
-    /// Takes in what changed outside the lighting meanwhile (aquasuite may change alarms or
-    /// calibration), so the frames do not keep writing the old values back.
-    /// </summary>
-    void RebaseOn(HighFlowNext dev)
-    {
-        _lastRebase = Stopwatch.GetTimestamp();
-        var live = dev.Read();
-        var frame = Layout(live);
-        if (_link.Native is { } native)
-        {
-            // The sensor's own lighting is ours to keep; everything else follows the sensor.
-            var report = live.ToReport();
-            var ownLighting = native.ToReport();
-            for (int i = HighFlowNextConfig.StripBrightness; i < HighFlowNextConfig.FirstController + HighFlowNextConfig.Controllers * HighFlowNextConfig.ControllerSize; i++)
-                report[i] = ownLighting[i];
-            _baseline = HighFlowNextConfig.Parse(FixCrc(report));
-            frame = Layout(_baseline);
-        }
-        _frame = frame;
-        _streaming = false;   // resend everything on the next frame
-    }
-
-    static byte[] FixCrc(byte[] report)
-    {
-        ushort crc = HighFlowNextConfig.Crc16Usb(report.AsSpan(1, HighFlowNextConfig.CrcOffset - 1));
-        report[HighFlowNextConfig.CrcOffset] = (byte)(crc >> 8);
-        report[HighFlowNextConfig.CrcOffset + 1] = (byte)crc;
-        return report;
     }
 
     /// <summary>Puts the sensor's own lighting back.</summary>
